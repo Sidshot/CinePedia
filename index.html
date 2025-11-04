@@ -126,6 +126,18 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
 }
 #scrollTopBtn.visible{ opacity:1; visibility:visible; transform:translateY(0); }
 </style>
+
+<style>
+/* Clamp excessive inline text in Notes to avoid overflowing layouts */
+.card .notes, .notes { 
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -1282,6 +1294,52 @@ const rows = parseCSV(text);
 })();
 </script>
 <!-- === End Dedup Add-on === -->
+
+
+<script>
+// === Import hardening v2 ===
+(function(){
+  function looksLikeJSONBlob(s){
+    if (!s) return false;
+    const t = String(s).trim();
+    if (/^const\s+data\s*=|^\[\s*\{|^\{\s*\[/.test(t)) return true;
+    if (t.length > 2000 && /["'\[\]{\}]/.test(t)) return true;
+    return false;
+  }
+  function sanitizeRecord(rec){
+    const out = {};
+    for (const k in rec){
+      if (!Object.prototype.hasOwnProperty.call(rec, k)) continue;
+      let v = rec[k];
+      if (typeof v === 'string'){
+        v = v.replace(/\r\n?|\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        if (looksLikeJSONBlob(v)) v = '';
+      }
+      out[k] = v;
+    }
+    return out;
+  }
+  function sanitizeArray(arr){
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter(r => r && Object.keys(r).length > 0)
+      .map(sanitizeRecord)
+      .filter(r => {
+        const vals = Object.values(r).join(' ').toLowerCase();
+        if (!vals) return false;
+        if (/^const\s+data\s*=/.test(vals)) return false;
+        return true;
+      });
+  }
+  // Hook: wrap the global CSV import append function if present.
+  const origCsvAppend = window.onCsvRowsLoaded;
+  window.onCsvRowsLoaded = function(rows){
+    const clean = sanitizeArray(rows);
+    return (typeof origCsvAppend === 'function' ? origCsvAppend(clean) : null);
+  };
+})();
+// === End hardening ===
+</script>
 
 </body>
 </html>
