@@ -11,6 +11,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&display=swap" rel="stylesheet">
 
 <style>
+
+  /* Card pop on hover/focus (non-destructive) */
+.card{
+  transition: transform .2s ease, box-shadow .2s ease;
+  will-change: transform;
+}
+.card:hover,
+.card:focus-within{
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  z-index: 2; /* rises above neighbors without layout shifts */
+}
+
 :root{
   --bg:#0b0f14; --fg:#eef1f6; --muted:#a7b0bd;
   --card:rgba(18,24,33,0.55); --border:rgba(255,255,255,0.10);
@@ -128,6 +141,83 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
 </style>
 
 <style>
+  /* Legal gate styles */
+.gate-backdrop{
+  position:fixed; inset:0;
+  background:rgba(10,14,20,.78);           /* darken */
+  backdrop-filter: blur(8px) saturate(140%);/* blur background */
+  display:grid; place-items:center;
+  z-index:2147483647;                       /* above everything */
+}
+.gate-dialog{
+  width:min(560px,92vw);
+  background:var(--bg, #0f141a);
+  color:var(--fg, #eef1f6);
+  border:1px solid var(--border, rgba(255,255,255,.16));
+  border-radius:16px;
+  padding:20px;
+  box-shadow:0 24px 80px rgba(0,0,0,.55);
+}
+.gate-title{ margin:0 0 8px; font-weight:800; font-size:1.25rem; }
+.gate-text{ color:var(--muted, #9fb0c4); line-height:1.5; margin:0; }
+.gate-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
+.gate-btn{
+  padding:10px 14px; border-radius:12px; cursor:pointer;
+  border:1px solid var(--border, rgba(255,255,255,.16));
+  background:rgba(255,255,255,.06); color:var(--fg, #eef1f6);
+}
+.gate-btn.danger{  background:rgba(231,76,60,.18);  border-color:rgba(231,76,60,.45); }
+.gate-btn.primary{ background:rgba(46,204,113,.18); border-color:rgba(46,204,113,.45); }
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var gate      = document.getElementById('legal-gate');
+  var backdrop  = document.querySelector('.gate-backdrop, #gate-backdrop');
+  var backBtn   = document.getElementById('gate-back');
+  var enterBtn  = document.querySelector('#gate-enter, .gate-enter, [data-action="enter"]');
+
+  function showGate() {
+    if (gate) {
+      gate.hidden = false;
+      gate.style.removeProperty('display');
+    }
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    if (backBtn) { try { backBtn.focus(); } catch(e){} }
+  }
+
+  function closeGateHard(e) {
+    if (e) e.preventDefault();
+    if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
+    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  if (backBtn) {
+    backBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.location.href = 'https://www.google.com/';
+    });
+  }
+
+  if (enterBtn) {
+    enterBtn.addEventListener('click', closeGateHard);
+  }
+
+  if (gate) {
+    gate.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t && (t.id === 'gate-enter' || t.matches('#gate-enter, .gate-enter, [data-action="enter"]'))) {
+        closeGateHard(e);
+      }
+    });
+  }
+
+  showGate();
+});
+</script>
+
+
 /* Clamp excessive inline text in Notes to avoid overflowing layouts */
 .card .notes, .notes { 
   display: -webkit-box;
@@ -1541,6 +1631,451 @@ const rows = parseCSV(text);
     apply(rows);
   })();
 })();
+</script>
+<!-- BEGIN: CinePedia GitHub Import & Save panel -->
+<script>
+(function(){
+  // ===== UI (fixed corner) =====
+  const panel = document.createElement('div');
+  panel.innerHTML = `
+<style>
+#ghp { position:fixed; bottom:16px; left:16px; z-index:9999; display:flex; gap:8px; flex-wrap:wrap; }
+#ghp button { padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.35); color:#fff; cursor:pointer; }
+#ghp-dialog { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:10000; }
+#ghp-card { width:min(520px, 94vw); background:#0f141a; color:#e8eef5; border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:14px; }
+#ghp-card label { display:block; font: 12px/1.2 system-ui; color:#9fb0c4; margin-top:8px }
+#ghp-card input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:#0b1015; color:#e8eef5; }
+#ghp-card .row { display:flex; gap:8px }
+#ghp-card .row > div { flex:1 }
+#ghp-msg { font:12px/1.4 system-ui; color:#9fb0c4; margin-top:8px; min-height:1.4em }
+</style>
+<div id="ghp">
+  <input id="ghp-file" type="file" accept=".csv" style="display:none">
+  <button id="ghp-import">Import CSV (save to GitHub)</button>
+  <button id="ghp-settings">GitHub settings</button>
+</div>
+<div id="ghp-dialog"><div id="ghp-card">
+  <div style="font-weight:700; margin-bottom:6px">GitHub settings</div>
+  <div class="row">
+    <div><label>Owner</label><input id="ghp-owner" placeholder="sidshot"></div>
+    <div><label>Repo</label><input id="ghp-repo" placeholder="CinePedia"></div>
+  </div>
+  <div class="row">
+    <div><label>Branch</label><input id="ghp-branch" placeholder="main"></div>
+    <div><label>Path</label><input id="ghp-path" placeholder="data/cinepedia.csv"></div>
+  </div>
+  <label>Token (Personal Access Token with “contents: write”)</label>
+  <input id="ghp-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+  <div id="ghp-msg"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px">
+    <button id="ghp-cancel">Close</button>
+    <button id="ghp-save">Save</button>
+  </div>
+</div></div>`;
+  document.body.appendChild(panel);
+
+  const els = {
+    file: panel.querySelector('#ghp-file'),
+    btnImport: panel.querySelector('#ghp-import'),
+    btnSettings: panel.querySelector('#ghp-settings'),
+    dialog: panel.querySelector('#ghp-dialog'),
+    owner: panel.querySelector('#ghp-owner'),
+    repo: panel.querySelector('#ghp-repo'),
+    branch: panel.querySelector('#ghp-branch'),
+    path: panel.querySelector('#ghp-path'),
+    token: panel.querySelector('#ghp-token'),
+    msg: panel.querySelector('#ghp-msg'),
+    btnSave: panel.querySelector('#ghp-save'),
+    btnCancel: panel.querySelector('#ghp-cancel'),
+  };
+
+  // ===== Persist settings in session only (tab lifetime) =====
+  const SKEY='cinepedia_gh_cfg';
+  function loadCfg(){
+    try { return JSON.parse(sessionStorage.getItem(SKEY) || '{}'); } catch { return {}; }
+  }
+  function saveCfg(cfg){
+    sessionStorage.setItem(SKEY, JSON.stringify(cfg||{}));
+  }
+  function setMsg(s){ els.msg.textContent = s || ''; }
+
+  function openSettings(){
+    const cfg = loadCfg();
+    els.owner.value = cfg.owner || 'sidshot';
+    els.repo.value = cfg.repo || 'CinePedia';
+    els.branch.value = cfg.branch || 'main';
+    els.path.value = cfg.path || 'data/cinepedia.csv';
+    els.token.value = cfg.token || '';
+    setMsg('Token is stored in sessionStorage only (cleared on tab close).');
+    els.dialog.style.display = 'flex';
+  }
+  function closeSettings(){ els.dialog.style.display = 'none'; }
+
+  els.btnSettings.onclick = openSettings;
+  els.btnSave.onclick = () => {
+    const cfg = {
+      owner: els.owner.value.trim(),
+      repo: els.repo.value.trim(),
+      branch: els.branch.value.trim(),
+      path: els.path.value.trim(),
+      token: els.token.value.trim()
+    };
+    if(!cfg.owner || !cfg.repo || !cfg.branch || !cfg.path || !cfg.token){
+      setMsg('All fields required.'); return;
+    }
+    saveCfg(cfg);
+    setMsg('Saved.');
+  };
+  els.btnCancel.onclick = closeSettings;
+  els.dialog.addEventListener('click', e => { if(e.target === els.dialog) closeSettings(); });
+
+  // ===== GitHub API helpers =====
+  function toBase64(text){
+    // UTF-8 safe base64
+    return btoa(unescape(encodeURIComponent(text)));
+  }
+  async function ghGet(owner, repo, path, branch, token){
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+    const r = await fetch(url, { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }});
+    if (r.status === 200) return r.json();
+    return null; // not found or no access
+  }
+  async function ghPut(owner, repo, path, branch, token, contentBase64, sha){
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+    const body = {
+      message: `Update ${path} via in-site import`,
+      content: contentBase64,
+      branch
+    };
+    if (sha) body.sha = sha;
+    const r = await fetch(url, {
+      method:'PUT',
+      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(`GitHub PUT failed ${r.status}`);
+    return r.json();
+  }
+
+  // ===== CSV normalize (same header logic you use) =====
+  function normalizeRow(row){
+    function pick(names){
+      for(const want of names){
+        for (const k in row){
+          if (k && k.trim && k.trim().toLowerCase() === want.toLowerCase()){
+            const v = String(row[k] ?? '').trim();
+            if (v) return v;
+          }
+        }
+      }
+      return '';
+    }
+    const title = pick(['Title','Título','Titulo','Movie','Film','Name']);
+    if (!title) return null;
+    const y = pick(['Year','Ano','Release Year']);
+    const year = y ? parseInt(y, 10) : '';
+    return {
+      title,
+      original:   pick(['Original Title','Título Original','Original','Titulo Original']),
+      year:       Number.isFinite(year) ? year : '',
+      director:   pick(['Director','Diretor']),
+      letterboxd: pick(['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
+      drive:      pick(['Drive','Drive Link','Link do Drive']),
+      notes:      pick(['Notes','Observações','Obs','Note','Description'])
+    };
+  }
+  function toCSV(rows){
+    const header = ['Title','Original Title','Year','Director','Letterboxd','Drive','Notes'];
+    const esc = v => {
+      const s = String(v ?? '');
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    };
+    return header.join(',') + '\n' + rows.map(d => [
+      d.title, d.original||'', d.year||'', d.director||'', d.letterboxd||'', d.drive||'', d.notes||''
+    ].map(esc).join(',')).join('\n');
+  }
+
+  // ===== Import & Save =====
+  els.btnImport.onclick = () => els.file.click();
+  els.file.onchange = async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+
+  const cfg = loadCfg();
+  if (!cfg.token){ openSettings(); setMsg('Provide token first.'); return; }
+
+  // Ensure PapaParse present
+  if (!window.Papa){
+    await new Promise(res => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js';
+      s.onload = res; document.head.appendChild(s);
+    });
+  }
+
+  // Helpers
+  const fromBase64 = (b64) => {
+    try { return decodeURIComponent(escape(atob(b64))); } catch { return atob(b64); }
+  };
+  const dedupe = (arr) => {
+    const m = new Map();
+    for (const r of arr) {
+      if (!r || !r.title) continue;
+      const k = (r.title||'').trim().toLowerCase() + '|' + String(r.year||'').trim();
+      if (!m.has(k)) m.set(k, r);
+    }
+    return [...m.values()];
+  };
+  const normalizeRow = window.normalizeRow || (row => row); // if defined earlier, reuse
+
+  // Parse NEW CSV (uploaded now)
+  const textNew = await f.text();
+  const parsedNew = await new Promise(res => Papa.parse(textNew, {
+    header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
+    complete:o=>res(o), error:_=>res({data:[]})
+  }));
+  const rowsNew = (parsedNew.data || []).map(normalizeRow).filter(Boolean);
+  if (!rowsNew.length){ alert('No usable rows in uploaded CSV.'); e.target.value=''; return; }
+
+  // Fetch EXISTING repo CSV (if any) and parse
+  const existing = await ghGet(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token);
+  let rowsExisting = [];
+  let sha = null;
+  if (existing && existing.content) {
+    sha = existing.sha || null;
+    const textOld = fromBase64(existing.content);
+    const parsedOld = await new Promise(res => Papa.parse(textOld, {
+      header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
+      complete:o=>res(o), error:_=>res({data:[]})
+    }));
+    rowsExisting = (parsedOld.data || []).map(normalizeRow).filter(Boolean);
+  }
+
+  // MERGE + DEDUPE
+  const merged = dedupe([...(rowsExisting||[]), ...rowsNew]);
+
+  // Commit merged CSV back to repo
+  try{
+    const content = toBase64(toCSV(merged));
+    await ghPut(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token, content, sha);
+    alert('Committed merged CSV to GitHub. Hard-refresh the site.');
+  }catch(err){
+    alert('GitHub commit failed. Check token/permissions/path.');
+    console.error(err);
+  }finally{
+    e.target.value = '';
+  }
+};
+
+
+    // Ensure PapaParse present (in case not in your head)
+    if (!window.Papa){
+      await new Promise(res => {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js';
+        s.onload = res; document.head.appendChild(s);
+      });
+    }
+
+    // Parse file as text; normalize minimally to avoid blowing up cards
+    const text = await f.text();
+    const parsed = await new Promise(res => {
+      Papa.parse(text, {
+        header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
+        complete: out => res(out), error: _ => res({data:[]})
+      });
+    });
+    const rows = (parsed.data || []).map(normalizeRow).filter(Boolean);
+    if (!rows.length){ alert('No usable rows found. Ensure CSV has a header row.'); return; }
+
+    // Commit to GitHub at cfg.path on cfg.branch
+    try{
+      const existing = await ghGet(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token);
+      const sha = existing && existing.sha ? existing.sha : null;
+      const content = toBase64(toCSV(rows));
+      await ghPut(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token, content, sha);
+      alert('Committed to GitHub. Hard-refresh the site to load the new CSV.');
+    }catch(err){
+      alert('GitHub commit failed. Check token/permissions/path.');
+      console.error(err);
+    }finally{
+      e.target.value = '';
+    }
+  };
+
+  // ===== Dual loader (CSV first, JSON fallback) — adds if not already present =====
+  if (!window.__cinepedia_loader_installed__){
+    window.__cinepedia_loader_installed__ = true;
+    const s = document.createElement('script');
+    s.type = 'module';
+    s.textContent = `
+      (function(){
+        function pick(row,names){
+          for(const want of names){
+            for(const k in row){
+              if(k && k.trim && k.trim().toLowerCase()===want.toLowerCase()){
+                const v=String(row[k]??'').trim(); if(v) return v;
+              }
+            }
+          } return '';
+        }
+        function normalizeRow(row){
+          const title=pick(row,['Title','Título','Titulo','Movie','Film','Name']); if(!title) return null;
+          const y=pick(row,['Year','Ano','Release Year']); const year=y?parseInt(y,10):'';
+          return {
+            title,
+            original: pick(row,['Original Title','Título Original','Original','Titulo Original']),
+            year: Number.isFinite(year)?year:'',
+            director: pick(row,['Director','Diretor']),
+            letterboxd: pick(row,['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
+            drive: pick(row,['Drive','Drive Link','Link do Drive']),
+            notes: pick(row,['Notes','Observações','Obs','Note','Description'])
+          };
+        }
+        function dedupe(arr){
+          const m=new Map();
+          for(const r of arr){
+            if(!r||!r.title) continue;
+            const k=(r.title||'').trim().toLowerCase()+'|'+String(r.year||'').trim();
+            if(!m.has(k)) m.set(k,r);
+          }
+          return [...m.values()];
+        }
+        function apply(rows){
+          rows = Array.isArray(rows)?dedupe(rows.filter(Boolean)):[];
+          if(!rows.length) return false;
+          if(typeof window.addFilms==='function'){ try{ addFilms(rows); return true; } catch{} }
+          if(Array.isArray(window.NORM)){ try{ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); return true; } catch{} }
+          return false;
+        }
+        function loadJSON(){ return fetch('data/cinepedia.data.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).catch(()=>[]); }
+        function loadCSV(){
+          return fetch('data/cinepedia.csv',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>new Promise(res=>{
+            if(!t||!window.Papa) return res([]);
+            Papa.parse(t,{header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim(),
+              complete:o=>res((o.data||[]).map(normalizeRow).filter(Boolean)), error:()=>res([])});
+          })).catch(()=>[]);
+        }
+        (async function(){
+          let rows = await loadCSV();
+          if(!rows.length) rows = await loadJSON();
+          apply(rows);
+        })();
+      })();
+    `;
+    document.body.appendChild(s);
+  }
+})();
+</script>
+<!-- END: CinePedia GitHub Import & Save panel -->
+<!-- CSV-first loader with JSON fallback + cache-busting -->
+<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+(function(){
+  function pick(row,names){
+    for(const want of names){
+      for(const k in row){
+        if(k && k.trim && k.trim().toLowerCase()===want.toLowerCase()){
+          const v=String(row[k]??'').trim(); if(v) return v;
+        }
+      }
+    }
+    return '';
+  }
+  function normalizeRow(row){
+    const title = pick(row,['Title','Título','Titulo','Movie','Film','Name']); if(!title) return null;
+    const y = pick(row,['Year','Ano','Release Year']); const year = y?parseInt(y,10):'';
+    return {
+      title,
+      original:   pick(row,['Original Title','Título Original','Original','Titulo Original']),
+      year:       Number.isFinite(year)?year:'',
+      director:   pick(row,['Director','Diretor']),
+      letterboxd: pick(row,['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
+      drive:      pick(row,['Drive','Drive Link','Link do Drive']),
+      notes:      pick(row,['Notes','Observações','Obs','Note','Description'])
+    };
+  }
+  function dedupe(rows){
+    const m=new Map();
+    for(const r of rows){
+      if(!r||!r.title) continue;
+      const k=(r.title||'').trim().toLowerCase()+'|'+String(r.year||'').trim();
+      if(!m.has(k)) m.set(k,r);
+    }
+    return [...m.values()];
+  }
+  // REPLACE mode (CSV defines the catalogue). To MERGE instead, swap applyReplace(...) for applyMerge(...) below.
+  function applyReplace(rows){
+    rows = dedupe(rows);
+    if(Array.isArray(window.NORM)){ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); return; }
+    if(typeof window.addFilms==='function'){ try{ addFilms(rows); }catch(e){} }
+  }
+  function applyMerge(rows){
+    const base = Array.isArray(window.NORM)?window.NORM.slice():[];
+    rows = dedupe(base.concat(rows));
+    if(Array.isArray(window.NORM)){ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); }
+  }
+
+  const bust = 'v=' + Date.now();
+
+  fetch('data/cinepedia.csv?'+bust, {cache:'no-store'})
+    .then(r=>r.ok?r.text():'')
+    .then(text => new Promise(res=>{
+      if(!text){ res([]); return; }
+      Papa.parse(text,{header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim(),
+        complete:o=>res((o.data||[]).map(normalizeRow).filter(Boolean)), error:()=>res([])});
+    }))
+    .then(rows => {
+      if(rows.length){ applyReplace(rows); return; }
+      return fetch('data/cinepedia.data.json?'+bust, {cache:'no-store'})
+        .then(r=>r.ok?r.json():[])
+        .then(js => Array.isArray(js)?js.map(normalizeRow).filter(Boolean):[])
+        .then(applyReplace)
+        .catch(()=>{});
+    })
+    .catch(()=>{});
+})();
+</script>
+<!-- Legal gate -->
+<div id="legal-gate" class="gate-backdrop" hidden>
+  <div class="gate-dialog" role="dialog" aria-labelledby="gate-title" aria-describedby="gate-text">
+    <h2 id="gate-title" class="gate-title">Legal notice</h2>
+    <p id="gate-text" class="gate-text">
+      All the films are property of their respective owners. We are just guiding you.
+    </p>
+    <div class="gate-actions">
+      <button id="gate-back"  class="gate-btn danger">FBI! Go back</button>
+      <button id="gate-enter" class="gate-btn primary">I am the Law</button>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var gate  = document.getElementById('legal-gate');
+  if (!gate) return;
+
+  var back  = document.getElementById('gate-back');
+  var enter = document.getElementById('gate-enter');
+
+  function showGate() {
+    gate.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    setTimeout(function () { try { back && back.focus(); } catch (e) {} }, 0);
+  }
+  function closeGate() {
+    gate.hidden = true;
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  back  && back.addEventListener('click', function () {
+    window.location.href = 'https://www.google.com/';
+  });
+  enter && enter.addEventListener('click', closeGate);
+
+  showGate();
+});
 </script>
 
 </body>
