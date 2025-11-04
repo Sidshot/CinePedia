@@ -697,8 +697,7 @@ document.addEventListener('DOMContentLoaded', boot);
       NORM.push(rec);
       saveUserAdds(USER_ADDS);
       refreshFilters();
-      if (typeof render === 'function') render();
-      dlg.close();
+      if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); dlg.close();
       e.currentTarget.reset();
     });
 
@@ -710,8 +709,22 @@ document.addEventListener('DOMContentLoaded', boot);
       const reader = new FileReader();
       reader.onload = ()=>{
         try{
-          const text = String(reader.result || '');
-          const rows = parseCSV(text);
+          // Decode with UTF-8, fallback to Latin-1 if mojibake is detected
+let text = '';
+try {
+  const buf = reader.result; // ArrayBuffer
+  let dec = new TextDecoder('utf-8', {fatal:false});
+  text = dec.decode(new Uint8Array(buf));
+  const first = text.slice(0, 512);
+  // Heuristic: if replacement chars or UTF-8 mojibake appear, try latin1
+  if (/\uFFFD|T\uFFFD|Ã[A-Za-z]/.test(first)) {
+    dec = new TextDecoder('latin1');
+    text = dec.decode(new Uint8Array(buf));
+  }
+} catch(e) {
+  text = String(reader.result || '');
+}
+const rows = parseCSV(text);
           if (!rows.length) throw new Error('No rows');
           const headers = rows[0].map(h=>h.trim());
           let added = 0;
@@ -729,15 +742,14 @@ document.addEventListener('DOMContentLoaded', boot);
           }
           saveUserAdds(USER_ADDS);
           refreshFilters();
-          if (typeof render === 'function') render();
-          alert(added + ' film(s) imported.');
+          if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); alert(added + ' film(s) imported.');
         }catch(err){
           alert('CSV import failed: ' + err.message);
         } finally {
           file.value = '';
         }
       };
-      reader.readAsText(f);
+      reader.readAsArrayBuffer(f);
     });
   }
 
@@ -908,8 +920,7 @@ document.addEventListener('DOMContentLoaded', boot);
       saveEdits(patches);
 
       refreshFiltersSafe();
-      if (typeof render === 'function') render();
-      dlg.close();
+      if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); dlg.close();
     });
 
     return dlg;
@@ -1015,8 +1026,7 @@ document.addEventListener('DOMContentLoaded', boot);
   function boot() {
     ensureIdsAndApplyEdits();
     installRenderOverride();
-    if (typeof render === 'function') render();
-  }
+    if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once:true });
   } else {
@@ -1059,6 +1069,219 @@ document.addEventListener('DOMContentLoaded', boot);
   }
 </style>
 
+
+
+<!-- === Dedup Add-on (auto-keep latest/best; tie -> user choice) === -->
+<script>
+(() => {
+  const DEDUP_KEY = 'film_dedup_choices_neo';
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  const slug = (s) => String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ')
+    .trim();
+
+  const makeGroupKey = (r) => {
+    const t = slug(r.title || r.original || '');
+    const y = r.year ? String(r.year) : '';
+    return t + '|' + y;
+  };
+
+  function score(r){
+    let s = 0;
+    const notes = ((r.notes||'') + ' ' + (r.title||'') + ' ' + (r.original||'')).toLowerCase();
+    const hasDl = !!r.dl, hasDrive = !!r.drive, hasLb = !!(r.lb || r.letterboxd);
+    if (hasDl && hasDrive) s += 50;
+    else if (hasDl) s += 40;
+    else if (hasDrive) s += 20;
+    if (hasLb) s += 10;
+    if (/(2160|\b4k\b|uhd)/.test(notes)) s += 3;
+    else if (/1080(p)?/.test(notes)) s += 2;
+    else if (/720(p)?/.test(notes)) s += 1;
+    const y = Number(r.year) || 0;
+    s += y/10000; // tiny tie-breaker toward newer
+    return s;
+  }
+
+  function loadChoices(){
+    try { return JSON.parse(localStorage.getItem(DEDUP_KEY) || '{}'); }
+    catch(_) { return {}; }
+  }
+  function saveChoices(obj){
+    localStorage.setItem(DEDUP_KEY, JSON.stringify(obj));
+  }
+
+  function updateDupButton(n=0){
+    const toolbar = document.querySelector('.toolbar');
+    if (!toolbar) return;
+    let btn = document.getElementById('dedupBtn');
+    if (!btn){
+      const right = toolbar.querySelector('.pagination');
+      btn = document.createElement('button');
+      btn.id = 'dedupBtn';
+      btn.className = 'page-btn';
+      btn.addEventListener('click', openConflictDialog);
+      right?.parentNode?.insertBefore(btn, right);
+    }
+    btn.textContent = n>0 ? `Resolve duplicates (${n})` : 'Deduplicate';
+  }
+
+  function buildConflictDialog(){
+    let dlg = document.getElementById('dedupDialog');
+    if (dlg) return dlg;
+    dlg = document.createElement('dialog');
+    dlg.id = 'dedupDialog';
+    dlg.className = 'modal';
+    dlg.innerHTML = `
+      <form method="dialog" id="dedupForm">
+        <h3 style="margin:0 0 10px 0;">Resolve duplicates</h3>
+        <div id="conflictBody" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow:auto;"></div>
+        <div class="actions-row">
+          <button value="cancel" class="btn-ghost" type="button" id="dedupCancel">Cancel</button>
+          <button value="default" class="page-btn" type="submit">Keep selected</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#dedupCancel')?.addEventListener('click', ()=> dlg.close());
+    dlg.querySelector('#dedupForm')?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const body = dlg.querySelector('#conflictBody');
+      const choices = loadChoices();
+      body.querySelectorAll('fieldset[data-key]').forEach(fs=>{
+        const key = fs.getAttribute('data-key');
+        const id = fs.querySelector('input[type="radio"]:checked')?.value;
+        if (key && id){ choices[key] = id; }
+      });
+      saveChoices(choices);
+      dlg.close();
+      window.runFilmDedup?.();
+    });
+    return dlg;
+  }
+
+  function renderConflicts(conflicts){
+    const dlg = buildConflictDialog();
+    const body = dlg.querySelector('#conflictBody');
+    body.innerHTML = '';
+    for (const c of conflicts){
+      const fs = document.createElement('fieldset');
+      fs.setAttribute('data-key', c.key);
+      const legend = document.createElement('legend');
+      const sample = c.list[0];
+      const t = `${sample.title||sample.original||'Untitled'}${sample.year?` (${sample.year})`:''}`;
+      legend.textContent = t;
+      fs.appendChild(legend);
+      for (const r of c.list){
+        const label = document.createElement('label');
+        label.style.display = 'grid';
+        label.style.gridTemplateColumns = '16px 1fr';
+        label.style.gap = '8px';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'grp_' + c.key;
+        radio.value = r.__id;
+        const dd = document.createElement('div');
+        dd.innerHTML = `
+          <div><strong>${escapeHtml(r.title||r.original||'Untitled')}</strong> ${r.year?`<span class="badge">${r.year}</span>`:''}</div>
+          <div class="meta">${escapeHtml(r.original||'')}${r.director?(' · '+escapeHtml(r.director)) : ''}</div>
+          <div class="actions">
+            ${r.lb?`<a class="btn letter" href="${r.lb}" target="_blank" rel="noopener">Letterboxd</a>`:''}
+            ${r.drive?`<a class="btn drive" href="${r.drive}" target="_blank" rel="noopener">Drive</a>`:''}
+            ${r.dl?`<a class="btn download" href="${r.dl}" target="_blank" rel="noopener">Download</a>`:''}
+          </div>`;
+        label.appendChild(radio);
+        label.appendChild(dd);
+        fs.appendChild(label);
+      }
+      body.appendChild(fs);
+    }
+    dlg.showModal();
+  }
+
+  // Core dedup; returns {removed, conflicts}
+  function dedupNow(){
+    if (!Array.isArray(window.NORM)) return {removed:0, conflicts:[]};
+    // Ensure __id exists; if not yet assigned by other add-ons, synthesize temporary ones.
+    for (let i=0;i<NORM.length;i++){
+      if (!NORM[i].__id) NORM[i].__id = 'tmp_' + i + '_' + Math.random().toString(36).slice(2,8);
+    }
+    const choices = loadChoices();
+    const groups = new Map();
+    for (const r of NORM){
+      const k = makeGroupKey(r);
+      if (!k) continue;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    }
+    const conflicts = [];
+    const winners = new Map();
+    for (const [k, list] of groups){
+      if (list.length <= 1) continue;
+      // user choice first
+      const savedId = choices[k];
+      let winner = savedId ? list.find(x => x.__id === savedId) : null;
+      if (!winner){
+        // auto by score
+        let best = -Infinity, bests = [];
+        for (const r of list){ const sc = score(r); if (sc > best){ best = sc; bests = [r]; } else if (sc === best){ bests.push(r); } }
+        if (bests.length === 1) winner = bests[0];
+        else {
+          conflicts.push({ key:k, list:[...list] });
+          continue;
+        }
+      }
+      winners.set(k, winner.__id);
+    }
+    // Remove losers from NORM in-place to keep site behavior
+    let removed = 0;
+    for (let i = NORM.length - 1; i >= 0; i--){
+      const r = NORM[i];
+      const k = makeGroupKey(r);
+      const keepId = winners.get(k);
+      if (keepId && r.__id !== keepId){
+        NORM.splice(i,1);
+        removed++;
+      }
+    }
+    // Try to re-render / refresh filters if helpers exist
+    try { if (typeof refreshFilters === 'function') refreshFilters(); } catch(_) {}
+    try { if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); } catch(_) {}
+    updateDupButton(conflicts.length);
+    return {removed, conflicts};
+  }
+
+  // Expose globally so other flows can call after add/import
+  window.runFilmDedup = function(){
+    const res = dedupNow();
+    if (res.conflicts.length) renderConflicts(res.conflicts);
+    return res;
+  };
+
+  function openConflictDialog(){
+    const res = dedupNow();
+    if (res.conflicts.length) renderConflicts(res.conflicts);
+    else alert('No unresolved duplicates.');
+  }
+
+  function boot(){
+    // Wait a tick so other add-ons can assign __id
+    setTimeout(() => {
+      window.runFilmDedup?.();
+    }, 50);
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot, { once:true });
+  } else {
+    boot();
+  }
+})();
+</script>
+<!-- === End Dedup Add-on === -->
 
 </body>
 </html>
