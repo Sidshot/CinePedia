@@ -144,6 +144,18 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
 }
 </style>
 
+
+<style>
+/* Clamp excessive inline text to avoid card overflow without changing design */
+.notes, .card .notes, .card .meta, .meta {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -1400,5 +1412,62 @@ const rows = parseCSV(text);
 </script>
 
   
+
+<script>
+// === Import hardening (style-preserving) ===
+(function(){
+  function looksLikeJSONBlob(s){
+    if (!s) return false;
+    const t = String(s).trim();
+    if (/^const\s+data\s*=|^\[\s*\{|^\{\s*\[/.test(t)) return true;
+    if (t.length > 2000 && /[\{\}\[\]:]/.test(t)) return true;
+    return false;
+  }
+  function cleanCell(v){
+    if (v == null) return '';
+    let s = String(v).replace(/\r\n?|\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (looksLikeJSONBlob(s)) s = '';
+    return s;
+  }
+  function sanitizeRows(rows){
+    if (!Array.isArray(rows)) return [];
+    return rows.map(r => {
+      const out = {};
+      for (const k in r){ if (Object.prototype.hasOwnProperty.call(r, k)) out[k] = cleanCell(r[k]); }
+      return out;
+    }).filter(r => Object.values(r).some(x => String(x).trim() !== ''));
+  }
+
+  // Wrap the CSV parser if present
+  if (typeof window.parseCSV === 'function'){
+    const origParse = window.parseCSV;
+    window.parseCSV = function(text){
+      try {
+        const rows = origParse(text) || [];
+        return sanitizeRows(rows);
+      } catch(e){
+        try {
+          if (window.Papa) {
+            const res = window.Papa.parse(text, {header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim()});
+            return sanitizeRows(res.data||[]);
+          }
+        } catch(_) {}
+        return [];
+      }
+    };
+  }
+
+  // Wrap known appenders
+  const wrap = fn => function(rows){ return fn(sanitizeRows(rows)); };
+  if (typeof window.onCsvRowsLoaded === 'function') window.onCsvRowsLoaded = wrap(window.onCsvRowsLoaded);
+  if (typeof window.appendRows === 'function') window.appendRows = wrap(window.appendRows);
+  if (typeof window.addFilms === 'function'){
+    const o = window.addFilms;
+    window.addFilms = function(rows){ return o(sanitizeRows(rows)); };
+  }
+})();
+// === End hardening ===
+</script>
+
 </body>
 </html>
