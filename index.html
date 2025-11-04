@@ -169,36 +169,54 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
 .gate-btn.danger{  background:rgba(231,76,60,.18);  border-color:rgba(231,76,60,.45); }
 .gate-btn.primary{ background:rgba(46,204,113,.18); border-color:rgba(46,204,113,.45); }
 <script>
-/* Show gate on every load; block page until user chooses */
-document.addEventListener('DOMContentLoaded', function(){
-  var gate  = document.getElementById('legal-gate');
-  var back  = document.getElementById('gate-back');
-  var enter = document.getElementById('gate-enter');
+document.addEventListener('DOMContentLoaded', function () {
+  var gate      = document.getElementById('legal-gate');
+  var backdrop  = document.querySelector('.gate-backdrop, #gate-backdrop');
+  var backBtn   = document.getElementById('gate-back');
+  var enterBtn  = document.querySelector('#gate-enter, .gate-enter, [data-action="enter"]');
 
-  function showGate(){
-    gate.hidden = false;
-    // lock scroll
+  function showGate() {
+    if (gate) {
+      gate.hidden = false;
+      gate.style.removeProperty('display');
+    }
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-    // focus the first action
-    setTimeout(function(){ try{ back.focus(); }catch(e){} }, 0);
+    if (backBtn) { try { backBtn.focus(); } catch(e){} }
   }
-  function closeGate() {
-  gate.setAttribute('hidden','');   // keep the semantic flag
-  gate.style.display = 'none';      // override author CSS display:grid
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow = '';
-}
 
+  function closeGateHard(e) {
+    if (e) e.preventDefault();
+    if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
+    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
 
-  back.addEventListener('click', function(){
-    window.location.href = 'https://www.google.com/';
-  });
-  enter.addEventListener('click', closeGate);
+  if (backBtn) {
+    backBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.location.href = 'https://www.google.com/';
+    });
+  }
 
-  showGate(); // always show on load
+  if (enterBtn) {
+    enterBtn.addEventListener('click', closeGateHard);
+  }
+
+  if (gate) {
+    gate.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t && (t.id === 'gate-enter' || t.matches('#gate-enter, .gate-enter, [data-action="enter"]'))) {
+        closeGateHard(e);
+      }
+    });
+  }
+
+  showGate();
 });
 </script>
+
 
 /* Clamp excessive inline text in Notes to avoid overflowing layouts */
 .card .notes, .notes { 
