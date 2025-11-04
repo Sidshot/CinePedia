@@ -1468,6 +1468,23 @@ const rows = parseCSV(text);
 })();
 // === End hardening ===
 </script>
+  <script>
+/* Load committed dataset on startup; no-ops if file not found */
+(function(){
+  function safeMerge(rows){
+    if (!Array.isArray(rows) || !rows.length) return;
+    if (window.addFilms) { try { addFilms(rows); return; } catch(e){} }
+    if (window.NORM && Array.isArray(window.NORM)) {
+      try { window.NORM.push(...rows); if (window.render) render(); } catch(e){}
+    }
+  }
+  fetch('data/cinepedia.data.json', {cache:'no-store'})
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => safeMerge(rows))
+    .catch(()=>{});
+})();
+</script>
+
 
 </body>
 </html>
