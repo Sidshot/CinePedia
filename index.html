@@ -1708,10 +1708,75 @@ const rows = parseCSV(text);
   // ===== Import & Save =====
   els.btnImport.onclick = () => els.file.click();
   els.file.onchange = async e => {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    const cfg = loadCfg();
-    if (!cfg.token){ openSettings(); setMsg('Provide token first.'); return; }
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+
+  const cfg = loadCfg();
+  if (!cfg.token){ openSettings(); setMsg('Provide token first.'); return; }
+
+  // Ensure PapaParse present
+  if (!window.Papa){
+    await new Promise(res => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js';
+      s.onload = res; document.head.appendChild(s);
+    });
+  }
+
+  // Helpers
+  const fromBase64 = (b64) => {
+    try { return decodeURIComponent(escape(atob(b64))); } catch { return atob(b64); }
+  };
+  const dedupe = (arr) => {
+    const m = new Map();
+    for (const r of arr) {
+      if (!r || !r.title) continue;
+      const k = (r.title||'').trim().toLowerCase() + '|' + String(r.year||'').trim();
+      if (!m.has(k)) m.set(k, r);
+    }
+    return [...m.values()];
+  };
+  const normalizeRow = window.normalizeRow || (row => row); // if defined earlier, reuse
+
+  // Parse NEW CSV (uploaded now)
+  const textNew = await f.text();
+  const parsedNew = await new Promise(res => Papa.parse(textNew, {
+    header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
+    complete:o=>res(o), error:_=>res({data:[]})
+  }));
+  const rowsNew = (parsedNew.data || []).map(normalizeRow).filter(Boolean);
+  if (!rowsNew.length){ alert('No usable rows in uploaded CSV.'); e.target.value=''; return; }
+
+  // Fetch EXISTING repo CSV (if any) and parse
+  const existing = await ghGet(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token);
+  let rowsExisting = [];
+  let sha = null;
+  if (existing && existing.content) {
+    sha = existing.sha || null;
+    const textOld = fromBase64(existing.content);
+    const parsedOld = await new Promise(res => Papa.parse(textOld, {
+      header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
+      complete:o=>res(o), error:_=>res({data:[]})
+    }));
+    rowsExisting = (parsedOld.data || []).map(normalizeRow).filter(Boolean);
+  }
+
+  // MERGE + DEDUPE
+  const merged = dedupe([...(rowsExisting||[]), ...rowsNew]);
+
+  // Commit merged CSV back to repo
+  try{
+    const content = toBase64(toCSV(merged));
+    await ghPut(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token, content, sha);
+    alert('Committed merged CSV to GitHub. Hard-refresh the site.');
+  }catch(err){
+    alert('GitHub commit failed. Check token/permissions/path.');
+    console.error(err);
+  }finally{
+    e.target.value = '';
+  }
+};
+
 
     // Ensure PapaParse present (in case not in your head)
     if (!window.Papa){
