@@ -183,11 +183,13 @@ document.addEventListener('DOMContentLoaded', function(){
     // focus the first action
     setTimeout(function(){ try{ back.focus(); }catch(e){} }, 0);
   }
-  function closeGate(){
-    gate.hidden = true;
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-  }
+  function closeGate() {
+  gate.setAttribute('hidden','');   // keep the semantic flag
+  gate.style.display = 'none';      // override author CSS display:grid
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+}
+
 
   back.addEventListener('click', function(){
     window.location.href = 'https://www.google.com/';
