@@ -137,6 +137,12 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
   word-break: break-word;
 }
 </style>
+<style>
+.card .notes, .notes{
+  display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
+  overflow:hidden; word-break:break-word;
+}
+</style>
 
 </head>
 <body>
@@ -1340,6 +1346,59 @@ const rows = parseCSV(text);
 })();
 // === End hardening ===
 </script>
+<script>
+/* CSV Import Hardening — drop JSON/blobs; trim newlines; cap length */
+(function(){
+  function looksLikeJSONBlob(s){
+    if (!s) return false;
+    const t = String(s).trim();
+    if (/^const\s+data\s*=/i.test(t)) return true;
+    if ((t.startsWith('[{') && t.endsWith('}]')) || (t.startsWith('{') && t.endsWith('}'))) return true;
+    if (t.length > 2000 && /[\{\}\[\]:]/.test(t)) return true;
+    return false;
+  }
+  function cleanCell(v){
+    if (v == null) return '';
+    let s = String(v).replace(/\r?\n/g,' ').replace(/\s{2,}/g,' ').trim();
+    if (looksLikeJSONBlob(s)) return '';
+    return s;
+  }
+  function sanitizeRows(rows){
+    if (!Array.isArray(rows)) return [];
+    return rows.map(r => {
+      const out = {};
+      for (const k in r){ if (Object.prototype.hasOwnProperty.call(r,k)) out[k] = cleanCell(r[k]); }
+      return out;
+    }).filter(r => Object.values(r).some(x => String(x).trim() !== ''));
+  }
 
+  // Wrap parseCSV(text) -> rows
+  if (typeof window.parseCSV === 'function'){
+    const origParse = window.parseCSV;
+    window.parseCSV = function(text){
+      const rows = origParse(text) || [];
+      return sanitizeRows(rows);
+    };
+  }
+
+  // Wrap any append callbacks used after parsing
+  const wrap = fn => function(rows){ return fn(sanitizeRows(rows)); };
+
+  if (typeof window.onCsvRowsLoaded === 'function'){
+    window.onCsvRowsLoaded = wrap(window.onCsvRowsLoaded);
+  }
+  if (typeof window.appendRows === 'function'){
+    window.appendRows = wrap(window.appendRows);
+  }
+
+  // Last resort: wrap the global add function if present
+  if (typeof window.addFilms === 'function'){
+    const orig = window.addFilms;
+    window.addFilms = function(rows){ return orig(sanitizeRows(rows)); };
+  }
+})();
+</script>
+
+  
 </body>
 </html>
