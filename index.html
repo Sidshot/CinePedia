@@ -11,19 +11,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&display=swap" rel="stylesheet">
 
 <style>
-
-  /* Card pop on hover/focus (non-destructive) */
-.card{
-  transition: transform .2s ease, box-shadow .2s ease;
-  will-change: transform;
-}
-.card:hover,
-.card:focus-within{
-  transform: translateY(-6px) scale(1.03);
-  box-shadow: 0 18px 40px rgba(0,0,0,.35);
-  z-index: 2; /* rises above neighbors without layout shifts */
-}
-
 :root{
   --bg:#0b0f14; --fg:#eef1f6; --muted:#a7b0bd;
   --card:rgba(18,24,33,0.55); --border:rgba(255,255,255,0.10);
@@ -139,113 +126,6 @@ footer{color:var(--muted);text-align:center;padding:18px 0;border-top:1px solid 
 }
 #scrollTopBtn.visible{ opacity:1; visibility:visible; transform:translateY(0); }
 </style>
-
-<style>
-  /* Legal gate styles */
-.gate-backdrop{
-  position:fixed; inset:0;
-  background:rgba(10,14,20,.78);           /* darken */
-  backdrop-filter: blur(8px) saturate(140%);/* blur background */
-  display:grid; place-items:center;
-  z-index:2147483647;                       /* above everything */
-}
-.gate-dialog{
-  width:min(560px,92vw);
-  background:var(--bg, #0f141a);
-  color:var(--fg, #eef1f6);
-  border:1px solid var(--border, rgba(255,255,255,.16));
-  border-radius:16px;
-  padding:20px;
-  box-shadow:0 24px 80px rgba(0,0,0,.55);
-}
-.gate-title{ margin:0 0 8px; font-weight:800; font-size:1.25rem; }
-.gate-text{ color:var(--muted, #9fb0c4); line-height:1.5; margin:0; }
-.gate-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
-.gate-btn{
-  padding:10px 14px; border-radius:12px; cursor:pointer;
-  border:1px solid var(--border, rgba(255,255,255,.16));
-  background:rgba(255,255,255,.06); color:var(--fg, #eef1f6);
-}
-.gate-btn.danger{  background:rgba(231,76,60,.18);  border-color:rgba(231,76,60,.45); }
-.gate-btn.primary{ background:rgba(46,204,113,.18); border-color:rgba(46,204,113,.45); }
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  var gate      = document.getElementById('legal-gate');
-  var backdrop  = document.querySelector('.gate-backdrop, #gate-backdrop');
-  var backBtn   = document.getElementById('gate-back');
-  var enterBtn  = document.querySelector('#gate-enter, .gate-enter, [data-action="enter"]');
-
-  function showGate() {
-    if (gate) {
-      gate.hidden = false;
-      gate.style.removeProperty('display');
-    }
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    if (backBtn) { try { backBtn.focus(); } catch(e){} }
-  }
-
-  function closeGateHard(e) {
-    if (e) e.preventDefault();
-    if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
-    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-  }
-
-  if (backBtn) {
-    backBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      window.location.href = 'https://www.google.com/';
-    });
-  }
-
-  if (enterBtn) {
-    enterBtn.addEventListener('click', closeGateHard);
-  }
-
-  if (gate) {
-    gate.addEventListener('click', function (e) {
-      var t = e.target;
-      if (t && (t.id === 'gate-enter' || t.matches('#gate-enter, .gate-enter, [data-action="enter"]'))) {
-        closeGateHard(e);
-      }
-    });
-  }
-
-  showGate();
-});
-</script>
-
-
-/* Clamp excessive inline text in Notes to avoid overflowing layouts */
-.card .notes, .notes { 
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-</style>
-<style>
-.card .notes, .notes{
-  display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical;
-  overflow:hidden; word-break:break-word;
-}
-</style>
-
-
-<style>
-/* Clamp excessive inline text to avoid card overflow without changing design */
-.notes, .card .notes, .card .meta, .meta {
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-</style>
-
 </head>
 <body>
 <header>
@@ -817,7 +697,8 @@ document.addEventListener('DOMContentLoaded', boot);
       NORM.push(rec);
       saveUserAdds(USER_ADDS);
       refreshFilters();
-      if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); dlg.close();
+      if (typeof render === 'function') render();
+      dlg.close();
       e.currentTarget.reset();
     });
 
@@ -829,22 +710,8 @@ document.addEventListener('DOMContentLoaded', boot);
       const reader = new FileReader();
       reader.onload = ()=>{
         try{
-          // Decode with UTF-8, fallback to Latin-1 if mojibake is detected
-let text = '';
-try {
-  const buf = reader.result; // ArrayBuffer
-  let dec = new TextDecoder('utf-8', {fatal:false});
-  text = dec.decode(new Uint8Array(buf));
-  const first = text.slice(0, 512);
-  // Heuristic: if replacement chars or UTF-8 mojibake appear, try latin1
-  if (/\uFFFD|T\uFFFD|Ã[A-Za-z]/.test(first)) {
-    dec = new TextDecoder('latin1');
-    text = dec.decode(new Uint8Array(buf));
-  }
-} catch(e) {
-  text = String(reader.result || '');
-}
-const rows = parseCSV(text);
+          const text = String(reader.result || '');
+          const rows = parseCSV(text);
           if (!rows.length) throw new Error('No rows');
           const headers = rows[0].map(h=>h.trim());
           let added = 0;
@@ -862,14 +729,15 @@ const rows = parseCSV(text);
           }
           saveUserAdds(USER_ADDS);
           refreshFilters();
-          if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); alert(added + ' film(s) imported.');
+          if (typeof render === 'function') render();
+          alert(added + ' film(s) imported.');
         }catch(err){
           alert('CSV import failed: ' + err.message);
         } finally {
           file.value = '';
         }
       };
-      reader.readAsArrayBuffer(f);
+      reader.readAsText(f);
     });
   }
 
@@ -1040,7 +908,8 @@ const rows = parseCSV(text);
       saveEdits(patches);
 
       refreshFiltersSafe();
-      if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); dlg.close();
+      if (typeof render === 'function') render();
+      dlg.close();
     });
 
     return dlg;
@@ -1146,7 +1015,8 @@ const rows = parseCSV(text);
   function boot() {
     ensureIdsAndApplyEdits();
     installRenderOverride();
-    if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); }
+    if (typeof render === 'function') render();
+  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once:true });
   } else {
@@ -1191,892 +1061,612 @@ const rows = parseCSV(text);
 
 
 
-<!-- === Dedup Add-on (auto-keep latest/best; tie -> user choice) === -->
+<!-- === CinePedia Enhancement Bundle (non-breaking) === -->
+<style>
+  /* spacing & clarity */
+  .grid{gap:16px;}
+  .card{position:relative;padding:18px;gap:12px;}
+  .meta{line-height:1.45;}
+  .meta .kv{display:inline-flex;gap:4px;margin-right:16px;font-size:.9rem;opacity:.9}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .notes{margin-top:10px;padding:10px 12px;border:1px dashed var(--border);border-radius:10px;background:color-mix(in srgb,var(--card) 80%,transparent)}
+
+  /* edit button placement + collision fix */
+  .card .edit-btn{position:absolute;top:6px;right:10px;z-index:3;border:1px solid var(--border);background:transparent;color:var(--fg);font-size:.8rem;padding:4px 8px;border-radius:10px;opacity:.85}
+  .card .edit-btn:hover{opacity:1}
+  .card .title{display:block;padding-right:92px;min-height:1.8em}
+  .card .title .badge{margin-left:.35rem;vertical-align:baseline}
+  @media (max-width:560px){.card .title{padding-right:110px}}
+
+  /* button for N/A links */
+  .btn.na{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;border:1px dashed var(--border);opacity:.7;cursor:not-allowed;user-select:none}
+  .dialog-modal{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--fg);padding:16px;max-width:720px;width:90vw;backdrop-filter:var(--glass)}
+  dialog.dialog-modal::backdrop{background:rgba(0,0,0,.45)}
+  .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .form-grid .full{grid-column:1/-1}
+  .form-grid label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:4px}
+  .form-grid input,.form-grid textarea{width:100%}
+  .actions-row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  a.download{background:rgba(67,189,255,.18)}
+</style>
+
 <script>
-(() => {
-  const DEDUP_KEY = 'film_dedup_choices_neo';
+(()=>{ 'use strict';
+  // ----- CONFIG / ICONS -----
+  const KEY_ADDS='film_user_adds_neo', KEY_EDITS='film_user_edits_neo';
+  window.ICONS = window.ICONS || {};
+  ICONS.download ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 21h16"/></svg>';
+  ICONS.edit ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
 
-  function escapeHtml(s){
-    return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  // ----- STORAGE HELPERS -----
+  const load = (k,d)=>{try{return JSON.parse(localStorage.getItem(k)||d)}catch{return JSON.parse(d)}}
+  const save = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const USER_ADDS = load(KEY_ADDS,'[]');
+  const USER_EDITS = load(KEY_EDITS,'{}');
+
+  // Inject user-added rows into NORM (push; never reassign)
+  if(Array.isArray(USER_ADDS)&&Array.isArray(window.NORM)){ USER_ADDS.forEach(r=>NORM.push(r)); }
+
+  // ----- UTILITIES -----
+  const NA='N/A';
+  const fmt=v=> (v==null||String(v).trim()==='')?NA:String(v).trim();
+  const highlightSafe=(txt)=> typeof highlight==='function'?highlight(txt, (window.state&&state.q)||''):txt;
+
+  // simple 53-bit hash for stable ids
+  function hash53(str){let h1=0xdeadbeef^str.length,h2=0x41c6ce57^str.length;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}h1=(h1^(h1>>>16))>>>0;h2=(h2^(h2>>>13))>>>0;return (h2*4294967296+h1).toString(36);}
+
+  // normalize object (CSV/manual add)
+  function toNormalized(obj){
+    const g=(k,...alts)=>{for(const key of [k,...alts]){if(obj[key]!=null&&String(obj[key]).trim()!=='')return String(obj[key]).trim();}return '';}
+    const title=g('title','Title','Título','Titulo');
+    const original=g('original','Original Title','Título Original','Titulo Original');
+    const director=g('director','Director','Diretor');
+    const yearStr=g('year','Year','Ano');
+    const lb=g('lb','letterboxd','Letterboxd','Letterboxd Link','Link do Letterboxd');
+    const drive=g('drive','Drive','Drive Link','Link do Drive');
+    const dl=g('dl','download','Download','Download Link','Link de Download');
+    const year=yearStr?(parseInt(yearStr,10)||null):null;
+    return {title,original,year,director,lb,drive,dl};
   }
-
-  const slug = (s) => String(s || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,' ')
-    .trim();
-
-  const makeGroupKey = (r) => {
-    const t = slug(r.title || r.original || '');
-    const y = r.year ? String(r.year) : '';
-    return t + '|' + y;
-  };
-
-  function score(r){
-    let s = 0;
-    const notes = ((r.notes||'') + ' ' + (r.title||'') + ' ' + (r.original||'')).toLowerCase();
-    const hasDl = !!r.dl, hasDrive = !!r.drive, hasLb = !!(r.lb || r.letterboxd);
-    if (hasDl && hasDrive) s += 50;
-    else if (hasDl) s += 40;
-    else if (hasDrive) s += 20;
-    if (hasLb) s += 10;
-    if (/(2160|\b4k\b|uhd)/.test(notes)) s += 3;
-    else if (/1080(p)?/.test(notes)) s += 2;
-    else if (/720(p)?/.test(notes)) s += 1;
-    const y = Number(r.year) || 0;
-    s += y/10000; // tiny tie-breaker toward newer
-    return s;
-  }
-
-  function loadChoices(){
-    try { return JSON.parse(localStorage.getItem(DEDUP_KEY) || '{}'); }
-    catch(_) { return {}; }
-  }
-  function saveChoices(obj){
-    localStorage.setItem(DEDUP_KEY, JSON.stringify(obj));
-  }
-
-  function updateDupButton(n=0){
-    const toolbar = document.querySelector('.toolbar');
-    if (!toolbar) return;
-    let btn = document.getElementById('dedupBtn');
-    if (!btn){
-      const right = toolbar.querySelector('.pagination');
-      btn = document.createElement('button');
-      btn.id = 'dedupBtn';
-      btn.className = 'page-btn';
-      btn.addEventListener('click', openConflictDialog);
-      right?.parentNode?.insertBefore(btn, right);
+  // csv parser (quotes/commas/newlines)
+  function parseCSV(text){
+    const rows=[];let i=0,f='',row=[],q=false;
+    while(i<text.length){const c=text[i];
+      if(q){ if(c=='"'){ if(text[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+      else { if(c===','){row.push(f.trim());f='';}
+             else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(f.trim());f=''; if(row.length>1||row[0]!=='')rows.push(row); row=[]; }
+             else if(c==='"'){q=true;} else f+=c; }
+      i++;
     }
-    btn.textContent = n>0 ? `Resolve duplicates (${n})` : 'Deduplicate';
+    if(f.length||row.length){row.push(f.trim());rows.push(row);}
+    return rows;
   }
 
-  function buildConflictDialog(){
-    let dlg = document.getElementById('dedupDialog');
-    if (dlg) return dlg;
-    dlg = document.createElement('dialog');
-    dlg.id = 'dedupDialog';
-    dlg.className = 'modal';
-    dlg.innerHTML = `
-      <form method="dialog" id="dedupForm">
-        <h3 style="margin:0 0 10px 0;">Resolve duplicates</h3>
-        <div id="conflictBody" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow:auto;"></div>
+  // refresh filters if helper exists
+  function refreshFiltersSafe(){ try{ if(typeof refreshFilters==='function') refreshFilters(); }catch{} }
+
+  // assign stable ids & apply persisted edits; duplicates kept
+  function ensureIdsAndEdits(){
+    if(!Array.isArray(window.NORM)) return;
+    const seen=new Map();
+    for(const r of NORM){
+      const fp=[r.title||'',r.original||'',r.year??'',r.director||'',r.lb||r.letterboxd||'',r.drive||'',r.dl||''].join('|').toLowerCase();
+      const n=seen.get(fp)||0; seen.set(fp,n+1);
+      r.__id ||= `fm_${hash53(fp)}_${n}`;
+      const p = USER_EDITS[r.__id]; if(p && typeof p==='object'){ Object.assign(r,p); }
+    }
+  }
+
+  // ----- ADD FILM + CSV UI -----
+  function installImportUI(){
+    const toolbar=document.querySelector('.toolbar'); if(!toolbar||document.getElementById('addFilmBtn')) return;
+    const right=toolbar.querySelector('.pagination')||toolbar.lastElementChild;
+
+    const btnAdd=document.createElement('button'); btnAdd.id='addFilmBtn'; btnAdd.className='page-btn'; btnAdd.textContent='Add film';
+    const btnCSV=document.createElement('button'); btnCSV.id='importCsvBtn'; btnCSV.className='page-btn'; btnCSV.textContent='Import CSV';
+    right.parentNode.insertBefore(btnAdd,right); right.parentNode.insertBefore(btnCSV,right);
+
+    const file=document.createElement('input'); file.type='file'; file.accept='.csv,text/csv'; file.style.display='none'; document.body.appendChild(file);
+
+    const dlg=document.createElement('dialog'); dlg.id='addDialog'; dlg.className='dialog-modal';
+    dlg.innerHTML=`
+      <form method="dialog" id="addForm">
+        <h3 style="margin:0 0 10px 0;">Add a film</h3>
+        <div class="form-grid">
+          <div><label>Title<input name="title" required></label></div>
+          <div><label>Original title<input name="original"></label></div>
+          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
+          <div><label>Director(s)<input name="director"></label></div>
+          <div class="full"><label>Letterboxd link<input name="lb" placeholder="https://boxd.it/..."></label></div>
+          <div class="full"><label>Drive link<input name="drive" placeholder="https://drive.google.com/..."></label></div>
+          <div class="full"><label>Download link<input name="dl" placeholder="Direct download / transfer link"></label></div>
+        </div>
         <div class="actions-row">
-          <button value="cancel" class="btn-ghost" type="button" id="dedupCancel">Cancel</button>
-          <button value="default" class="page-btn" type="submit">Keep selected</button>
+          <button value="cancel" class="btn-ghost" type="button" id="cancelAdd">Cancel</button>
+          <button value="default" class="page-btn" type="submit">Add</button>
         </div>
       </form>`;
     document.body.appendChild(dlg);
-    dlg.querySelector('#dedupCancel')?.addEventListener('click', ()=> dlg.close());
-    dlg.querySelector('#dedupForm')?.addEventListener('submit', (e)=>{
+
+    btnAdd.addEventListener('click',()=>dlg.showModal());
+    dlg.querySelector('#cancelAdd').addEventListener('click',()=>dlg.close());
+
+    document.getElementById('addForm').addEventListener('submit',(e)=>{
       e.preventDefault();
-      const body = dlg.querySelector('#conflictBody');
-      const choices = loadChoices();
-      body.querySelectorAll('fieldset[data-key]').forEach(fs=>{
-        const key = fs.getAttribute('data-key');
-        const id = fs.querySelector('input[type="radio"]:checked')?.value;
-        if (key && id){ choices[key] = id; }
-      });
-      saveChoices(choices);
-      dlg.close();
-      window.runFilmDedup?.();
+      const rec=toNormalized(Object.fromEntries(new FormData(e.currentTarget).entries()));
+      if(!rec.title){ alert('Title is required.'); return; }
+      USER_ADDS.push(rec); save(KEY_ADDS,USER_ADDS);
+      if(Array.isArray(NORM)) NORM.push(rec);
+      refreshFiltersSafe(); if(typeof render==='function') render();
+      dlg.close(); e.currentTarget.reset();
+    });
+
+    btnCSV.addEventListener('click',()=>file.click());
+    file.addEventListener('change',()=>{
+      const f=file.files&&file.files[0]; if(!f) return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        try{
+          const rows=parseCSV(String(reader.result||'')); if(!rows.length) throw new Error('No rows');
+          const headers=rows[0].map(h=>h.trim()); let added=0;
+          for(let i=1;i<rows.length;i++){const row=rows[i]; if(!row||row.length===0) continue;
+            const obj={}; headers.forEach((h,idx)=>obj[h]=row[idx]??'');
+            const rec=toNormalized(obj); if(rec.title){ USER_ADDS.push(rec); if(Array.isArray(NORM)) NORM.push(rec); added++; }
+          }
+          save(KEY_ADDS,USER_ADDS); refreshFiltersSafe(); if(typeof render==='function') render();
+          alert(added+' film(s) imported.');
+        }catch(err){ alert('CSV import failed: '+err.message); }
+        finally{ file.value=''; }
+      };
+      reader.readAsText(f);
+    });
+  }
+
+  // ----- EDIT DIALOG -----
+  function getEditDialog(){
+    let dlg=document.getElementById('editDialog'); if(dlg) return dlg;
+    dlg=document.createElement('dialog'); dlg.id='editDialog'; dlg.className='dialog-modal';
+    dlg.innerHTML=`
+      <form method="dialog" id="editForm">
+        <h3 style="margin:0 0 10px 0;">Edit film</h3>
+        <input type="hidden" name="__id">
+        <div class="form-grid">
+          <div><label>Title<input name="title" required></label></div>
+          <div><label>Original title<input name="original"></label></div>
+          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
+          <div><label>Director(s)<input name="director"></label></div>
+          <div class="full"><label>Letterboxd link<input name="lb"></label></div>
+          <div class="full"><label>Drive link<input name="drive"></label></div>
+          <div class="full"><label>Download link<input name="dl"></label></div>
+          <div class="full"><label>Notes<textarea name="notes" rows="4" placeholder="Your annotations, rip/source, subs, etc."></textarea></label></div>
+        </div>
+        <div class="actions-row">
+          <button value="cancel" class="btn-ghost" type="button" id="cancelEdit">Cancel</button>
+          <button value="default" class="page-btn" type="submit">Save</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#cancelEdit').addEventListener('click',()=>dlg.close());
+
+    dlg.querySelector('#editForm').addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const fd=Object.fromEntries(new FormData(e.currentTarget).entries());
+      const id=fd.__id; if(!id) return;
+      const row=Array.isArray(NORM)?NORM.find(x=>x.__id===id):null; if(!row) return;
+
+      const patch={
+        title: fd.title||'',
+        original: fd.original||'',
+        year: fd.year? (parseInt(fd.year,10)||null) : null,
+        director: fd.director||'',
+        lb: fd.lb||'',
+        drive: fd.drive||'',
+        dl: fd.dl||'',
+        notes: fd.notes||''
+      };
+      Object.assign(row,patch);
+      USER_EDITS[id]=Object.assign(USER_EDITS[id]||{},patch);
+      save(KEY_EDITS,USER_EDITS);
+
+      refreshFiltersSafe(); if(typeof render==='function') render(); dlg.close();
     });
     return dlg;
   }
 
-  function renderConflicts(conflicts){
-    const dlg = buildConflictDialog();
-    const body = dlg.querySelector('#conflictBody');
-    body.innerHTML = '';
-    for (const c of conflicts){
-      const fs = document.createElement('fieldset');
-      fs.setAttribute('data-key', c.key);
-      const legend = document.createElement('legend');
-      const sample = c.list[0];
-      const t = `${sample.title||sample.original||'Untitled'}${sample.year?` (${sample.year})`:''}`;
-      legend.textContent = t;
-      fs.appendChild(legend);
-      for (const r of c.list){
-        const label = document.createElement('label');
-        label.style.display = 'grid';
-        label.style.gridTemplateColumns = '16px 1fr';
-        label.style.gap = '8px';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'grp_' + c.key;
-        radio.value = r.__id;
-        const dd = document.createElement('div');
-        dd.innerHTML = `
-          <div><strong>${escapeHtml(r.title||r.original||'Untitled')}</strong> ${r.year?`<span class="badge">${r.year}</span>`:''}</div>
-          <div class="meta">${escapeHtml(r.original||'')}${r.director?(' · '+escapeHtml(r.director)) : ''}</div>
-          <div class="actions">
-            ${r.lb?`<a class="btn letter" href="${r.lb}" target="_blank" rel="noopener">Letterboxd</a>`:''}
-            ${r.drive?`<a class="btn drive" href="${r.drive}" target="_blank" rel="noopener">Drive</a>`:''}
-            ${r.dl?`<a class="btn download" href="${r.dl}" target="_blank" rel="noopener">Download</a>`:''}
-          </div>`;
-        label.appendChild(radio);
-        label.appendChild(dd);
-        fs.appendChild(label);
-      }
-      body.appendChild(fs);
-    }
-    dlg.showModal();
+  // dynamic padding so title never hides under Edit (helps with custom fonts)
+  function reserveEditSpace(){
+    document.querySelectorAll('.card').forEach(c=>{
+      const btn=c.querySelector('.edit-btn'); const title=c.querySelector('.title');
+      if(!btn||!title) return; const w=btn.getBoundingClientRect().width||0;
+      title.style.paddingRight=(w+24)+'px';
+    });
   }
 
-  // Core dedup; returns {removed, conflicts}
-  function dedupNow(){
-    if (!Array.isArray(window.NORM)) return {removed:0, conflicts:[]};
-    // Ensure __id exists; if not yet assigned by other add-ons, synthesize temporary ones.
-    for (let i=0;i<NORM.length;i++){
-      if (!NORM[i].__id) NORM[i].__id = 'tmp_' + i + '_' + Math.random().toString(36).slice(2,8);
+  // ----- RENDER OVERRIDE: N/A + actions + edit/notes -----
+  function installRender(){
+    if(typeof filterData!=='function'||typeof sortData!=='function'||typeof paginate!=='function') return;
+    const F=filterData,S=sortData,P=paginate;
+
+    window.render=function(){
+      ensureIdsAndEdits();
+
+      const all=S(F()); const total=all.length;
+      const maxPage=Math.max(1,Math.ceil(total/state.pageSize)); if(state.page>maxPage) state.page=maxPage;
+      const pageRows=P(all);
+
+      const c=document.querySelector('#count'); if(c) c.textContent=total.toLocaleString();
+      const pi=document.querySelector('#pageInfo'); if(pi) pi.textContent=`Page ${state.page} / ${maxPage}`;
+      const prev=document.querySelector('#prev'), next=document.querySelector('#next');
+      if(prev) prev.disabled=state.page<=1; if(next) next.disabled=state.page>=maxPage;
+
+      const grid=document.querySelector('#grid'); if(!grid) return;
+      grid.innerHTML='';
+      if(pageRows.length===0){ grid.innerHTML='<div class="empty">No films match your filters.</div>'; return; }
+
+      const frag=document.createDocumentFragment();
+      pageRows.forEach((r,idx)=>{
+        const card=document.createElement('article'); card.className='card';
+        card.style.animationDelay=`${Math.min(idx*0.04,1)}s`;
+
+        const t=fmt(r.title), yr=(r.year==null||r.year==='')?NA:r.year;
+        const og=fmt(r.original), dir=fmt(r.director), notes=(r.notes&&String(r.notes).trim()!=='')?String(r.notes).trim():NA;
+
+        const titleHtml = `${highlightSafe(t)} <span class="badge">${yr}</span>`;
+        const metaHtml  = `<span class="kv"><span class="label">Original:</span> ${highlightSafe(og)}</span>
+                           <span class="kv"><span class="label">Director:</span> ${highlightSafe(dir)}</span>`;
+
+        const lb=r.lb||r.letterboxd||'', drive=r.drive||'', dl=r.dl||'';
+        const lbBtn = lb ? `<a class="btn letter" href="${lb}" target="_blank" rel="noopener noreferrer">${ICONS.letterboxd} Letterboxd</a>` : `<span class="btn na">Letterboxd: ${NA}</span>`;
+        const drBtn = drive ? `<a class="btn drive" href="${drive}" target="_blank" rel="noopener noreferrer">${ICONS.drive} Drive</a>` : `<span class="btn na">Drive: ${NA}</span>`;
+        const dlBtn = dl ? `<a class="btn download" href="${dl}" target="_blank" rel="noopener noreferrer">${ICONS.download} Download</a>` : `<span class="btn na">Download: ${NA}</span>`;
+
+        card.innerHTML = `
+          <button class="edit-btn" data-id="${r.__id||''}">${ICONS.edit} Edit</button>
+          <div class="title">${titleHtml}</div>
+          <div class="meta">${metaHtml}</div>
+          <div class="actions">${lbBtn}${drBtn}${dlBtn}</div>
+          <div class="notes"><strong>📝 Notes:</strong> ${notes}</div>
+        `;
+        frag.appendChild(card);
+      });
+      grid.appendChild(frag);
+
+      // wire edit buttons + ensure padding
+      grid.querySelectorAll('.edit-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const id=btn.getAttribute('data-id');
+          const row=Array.isArray(NORM)?NORM.find(x=>x.__id===id):null; if(!row) return;
+          const dlg=getEditDialog(); const f=dlg.querySelector('#editForm');
+          f.__id.value=id; f.title.value=row.title||''; f.original.value=row.original||'';
+          f.year.value=(row.year!=null?row.year:''); f.director.value=row.director||'';
+          f.lb.value=row.lb||row.letterboxd||''; f.drive.value=row.drive||''; f.dl.value=row.dl||'';
+          f.notes.value=row.notes||''; dlg.showModal();
+        });
+      });
+      reserveEditSpace();
     }
-    const choices = loadChoices();
-    const groups = new Map();
-    for (const r of NORM){
-      const k = makeGroupKey(r);
-      if (!k) continue;
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push(r);
-    }
-    const conflicts = [];
-    const winners = new Map();
-    for (const [k, list] of groups){
-      if (list.length <= 1) continue;
-      // user choice first
-      const savedId = choices[k];
-      let winner = savedId ? list.find(x => x.__id === savedId) : null;
-      if (!winner){
-        // auto by score
-        let best = -Infinity, bests = [];
-        for (const r of list){ const sc = score(r); if (sc > best){ best = sc; bests = [r]; } else if (sc === best){ bests.push(r); } }
-        if (bests.length === 1) winner = bests[0];
-        else {
-          conflicts.push({ key:k, list:[...list] });
-          continue;
-        }
-      }
-      winners.set(k, winner.__id);
-    }
-    // Remove losers from NORM in-place to keep site behavior
-    let removed = 0;
-    for (let i = NORM.length - 1; i >= 0; i--){
-      const r = NORM[i];
-      const k = makeGroupKey(r);
-      const keepId = winners.get(k);
-      if (keepId && r.__id !== keepId){
-        NORM.splice(i,1);
-        removed++;
-      }
-    }
-    // Try to re-render / refresh filters if helpers exist
-    try { if (typeof refreshFilters === 'function') refreshFilters(); } catch(_) {}
-    try { if (typeof render === 'function') render(); if (window.runFilmDedup) window.runFilmDedup(); } catch(_) {}
-    updateDupButton(conflicts.length);
-    return {removed, conflicts};
   }
 
-  // Expose globally so other flows can call after add/import
-  window.runFilmDedup = function(){
-    const res = dedupNow();
-    if (res.conflicts.length) renderConflicts(res.conflicts);
-    return res;
-  };
+  // ----- BOOT -----
+  function boot(){ ensureIdsAndEdits(); installImportUI(); installRender(); if(typeof render==='function') render(); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot, {once:true}); } else { boot(); }
+})();
+</script>
+<!-- === End CinePedia Enhancement Bundle === -->
 
-  function openConflictDialog(){
-    const res = dedupNow();
-    if (res.conflicts.length) renderConflicts(res.conflicts);
-    else alert('No unresolved duplicates.');
+
+
+
+
+
+
+
+<!-- === CinePedia Failsafe Enhancement Bundle (paste LAST) === -->
+<style>
+  .grid{gap:16px}
+  .card{position:relative;padding:18px;gap:12px}
+  .meta{line-height:1.45}
+  .meta .kv{display:inline-flex;gap:4px;margin-right:16px;font-size:.9rem;opacity:.9}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .notes{margin-top:10px;padding:10px 12px;border:1px dashed var(--border);border-radius:10px;background:color-mix(in srgb,var(--card) 80%,transparent)}
+  .card .edit-btn{position:absolute;top:6px;right:10px;z-index:3;border:1px solid var(--border);background:transparent;color:var(--fg);font-size:.8rem;padding:4px 8px;border-radius:10px;opacity:.85}
+  .card .edit-btn:hover{opacity:1}
+  .card .title{display:block;padding-right:92px;min-height:1.8em}
+  .card .title .badge{margin-left:.35rem;vertical-align:baseline}
+  @media (max-width:560px){.card .title{padding-right:110px}}
+  .btn.na{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;border:1px dashed var(--border);opacity:.7;cursor:not-allowed;user-select:none}
+  .dialog-modal{border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--fg);padding:16px;max-width:720px;width:90vw;backdrop-filter:var(--glass)}
+  dialog.dialog-modal::backdrop{background:rgba(0,0,0,.45)}
+  .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .form-grid .full{grid-column:1/-1}
+  .form-grid label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:4px}
+  .form-grid input,.form-grid textarea{width:100%}
+  .actions-row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  a.download{background:rgba(67,189,255,.18)}
+</style>
+
+<script>
+(()=>{'use strict';
+  // ---------- status ----------
+  window.__cinepediaBundle = { version:'failsafe-1', active:false, patched:false };
+
+  // ---------- icons ----------
+  window.ICONS = window.ICONS || {};
+  ICONS.letterboxd ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>';
+  ICONS.drive      ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l7 12-7 8-7-8z"/></svg>';
+  ICONS.download   ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 21h16"/></svg>';
+  ICONS.edit       ||= '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04l-2.34-2.34-1.83 1.83 3.75 3.75L20.71 7.04z"/></svg>';
+
+  const KEY_ADDS='film_user_adds_neo', KEY_EDITS='film_user_edits_neo';
+  const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||d)}catch{return JSON.parse(d)}};
+  const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const USER_ADDS=load(KEY_ADDS,'[]'); const USER_EDITS=load(KEY_EDITS,'{}');
+
+  const NA='N/A';
+  const fmt=v => (v==null||String(v).trim()==='')?NA:String(v).trim();
+  const highlightSafe=(t)=> typeof highlight==='function' ? highlight(t,(window.state&&state.q)||'') : t;
+
+  // normalize for CSV/manual
+  function toNormalized(obj){
+    const g=(k,...alts)=>{for(const key of [k,...alts]){if(obj[key]!=null&&String(obj[key]).trim()!=='')return String(obj[key]).trim();}return '';}
+    const title=g('title','Title','Título','Titulo');
+    const original=g('original','Original Title','Título Original','Titulo Original');
+    const director=g('director','Director','Diretor');
+    const yearStr=g('year','Year','Ano');
+    const lb=g('lb','letterboxd','Letterboxd','Letterboxd Link','Link do Letterboxd');
+    const drive=g('drive','Drive','Drive Link','Link do Drive');
+    const dl=g('dl','download','Download','Download Link','Link de Download');
+    const year=yearStr?(parseInt(yearStr,10)||null):null;
+    return {title,original,year,director,lb,drive,dl};
+  }
+  // CSV
+  function parseCSV(text){
+    const rows=[];let i=0,f='',row=[],q=false;
+    while(i<text.length){const c=text[i];
+      if(q){ if(c=='"'){ if(text[i+1]=='"'){f+='"';i++;} else q=false; } else f+=c; }
+      else { if(c===','){row.push(f.trim());f='';}
+             else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(f.trim());f=''; if(row.length>1||row[0]!=='')rows.push(row); row=[]; }
+             else if(c==='"'){q=true;} else f+=c; }
+      i++;
+    }
+    if(f.length||row.length){row.push(f.trim());rows.push(row);}
+    return rows;
+  }
+  // ids + apply edits (keep duplicates)
+  function hash53(str){let h1=0xdeadbeef^str.length,h2=0x41c6ce57^str.length;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}h1=(h1^(h1>>>16))>>>0;h2=(h2^(h2>>>13))>>>0;return (h2*4294967296+h1).toString(36);}
+  function ensureIdsAndEdits(){
+    if(!Array.isArray(window.NORM)) return;
+    // inject previously added rows
+    if(Array.isArray(USER_ADDS)) USER_ADDS.forEach(r=>{ if(window.NORM.indexOf(r)<0) NORM.push(r); });
+    const seen=new Map();
+    for(const r of NORM){
+      const fp=[r.title||'',r.original||'',r.year??'',r.director||'',r.lb||r.letterboxd||'',r.drive||'',r.dl||''].join('|').toLowerCase();
+      const n=seen.get(fp)||0; seen.set(fp,n+1);
+      r.__id ||= `fm_${hash53(fp)}_${n}`;
+      const p = USER_EDITS[r.__id]; if(p && typeof p==='object'){ Object.assign(r,p); }
+    }
+  }
+  // refresh filters if provided
+  function refreshFiltersSafe(){ try{ if(typeof refreshFilters==='function') refreshFilters(); }catch{} }
+
+  // install Add film + CSV (with robust placement)
+  function installImportUI(){
+    if(document.getElementById('addFilmBtn')) return;
+    let host = document.querySelector('.toolbar');
+    let anchor = host && (host.querySelector('.pagination') || host.lastElementChild);
+    if(!host){
+      host = document.createElement('div');
+      host.className='toolbar';
+      const grid = document.getElementById('grid') || document.body;
+      grid.parentNode.insertBefore(host, grid);
+    }
+    const btnAdd=document.createElement('button'); btnAdd.id='addFilmBtn'; btnAdd.className='page-btn'; btnAdd.textContent='Add film';
+    const btnCSV=document.createElement('button'); btnCSV.id='importCsvBtn'; btnCSV.className='page-btn'; btnCSV.textContent='Import CSV';
+    (anchor? anchor.parentNode : host).insertBefore(btnAdd, anchor||null);
+    (anchor? anchor.parentNode : host).insertBefore(btnCSV, anchor||null);
+
+    const file=document.createElement('input'); file.type='file'; file.accept='.csv,text/csv'; file.style.display='none'; document.body.appendChild(file);
+
+    const dlg=document.createElement('dialog'); dlg.id='addDialog'; dlg.className='dialog-modal';
+    dlg.innerHTML=`
+      <form method="dialog" id="addForm">
+        <h3 style="margin:0 0 10px 0;">Add a film</h3>
+        <div class="form-grid">
+          <div><label>Title<input name="title" required></label></div>
+          <div><label>Original title<input name="original"></label></div>
+          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
+          <div><label>Director(s)<input name="director"></label></div>
+          <div class="full"><label>Letterboxd link<input name="lb" placeholder="https://boxd.it/..."></label></div>
+          <div class="full"><label>Drive link<input name="drive" placeholder="https://drive.google.com/..."></label></div>
+          <div class="full"><label>Download link<input name="dl" placeholder="Direct download / transfer link"></label></div>
+        </div>
+        <div class="actions-row">
+          <button value="cancel" class="btn-ghost" type="button" id="cancelAdd">Cancel</button>
+          <button value="default" class="page-btn" type="submit">Add</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+
+    btnAdd.addEventListener('click',()=>dlg.showModal());
+    dlg.querySelector('#cancelAdd').addEventListener('click',()=>dlg.close());
+
+    document.getElementById('addForm').addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const rec=toNormalized(Object.fromEntries(new FormData(e.currentTarget).entries()));
+      if(!rec.title){ alert('Title is required.'); return; }
+      const adds=load(KEY_ADDS,'[]'); adds.push(rec); save(KEY_ADDS,adds);
+      if(Array.isArray(NORM)) NORM.push(rec);
+      refreshFiltersSafe(); if(typeof render==='function') render();
+      dlg.close(); e.currentTarget.reset();
+    });
+
+    btnCSV.addEventListener('click',()=>file.click());
+    file.addEventListener('change',()=>{
+      const f=file.files&&file.files[0]; if(!f) return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        try{
+          const rows=parseCSV(String(reader.result||'')); if(!rows.length) throw new Error('No rows');
+          const headers=rows[0].map(h=>h.trim()); let added=0; const adds=load(KEY_ADDS,'[]');
+          for(let i=1;i<rows.length;i++){const row=rows[i]; if(!row||row.length===0) continue;
+            const obj={}; headers.forEach((h,idx)=>obj[h]=row[idx]??'');
+            const rec=toNormalized(obj); if(rec.title){ adds.push(rec); if(Array.isArray(NORM)) NORM.push(rec); added++; }
+          }
+          save(KEY_ADDS,adds); refreshFiltersSafe(); if(typeof render==='function') render();
+          alert(added+' film(s) imported.');
+        }catch(err){ alert('CSV import failed: '+err.message); }
+        finally{ file.value=''; }
+      };
+      reader.readAsText(f);
+    });
+  }
+
+  // edit dialog
+  function getEditDialog(){
+    let dlg=document.getElementById('editDialog'); if(dlg) return dlg;
+    dlg=document.createElement('dialog'); dlg.id='editDialog'; dlg.className='dialog-modal';
+    dlg.innerHTML=`
+      <form method="dialog" id="editForm">
+        <h3 style="margin:0 0 10px 0;">Edit film</h3>
+        <input type="hidden" name="__id">
+        <div class="form-grid">
+          <div><label>Title<input name="title" required></label></div>
+          <div><label>Original title<input name="original"></label></div>
+          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
+          <div><label>Director(s)<input name="director"></label></div>
+          <div class="full"><label>Letterboxd link<input name="lb"></label></div>
+          <div class="full"><label>Drive link<input name="drive"></label></div>
+          <div class="full"><label>Download link<input name="dl"></label></div>
+          <div class="full"><label>Notes<textarea name="notes" rows="4" placeholder="Your annotations, rip/source, subs, etc."></textarea></label></div>
+        </div>
+        <div class="actions-row">
+          <button value="cancel" class="btn-ghost" type="button" id="cancelEdit">Cancel</button>
+          <button value="default" class="page-btn" type="submit">Save</button>
+        </div>
+      </form>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#cancelEdit').addEventListener('click',()=>dlg.close());
+
+    dlg.querySelector('#editForm').addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const fd=Object.fromEntries(new FormData(e.currentTarget).entries());
+      const id=fd.__id; if(!id) return;
+      const row=Array.isArray(NORM)?NORM.find(x=>x.__id===id):null; if(!row) return;
+
+      const patch={ title:fd.title||'', original:fd.original||'',
+        year: fd.year? (parseInt(fd.year,10)||null) : null,
+        director: fd.director||'', lb:fd.lb||'', drive:fd.drive||'', dl:fd.dl||'', notes:fd.notes||'' };
+      Object.assign(row,patch);
+      const edits=load(KEY_EDITS,'{}'); edits[id]=Object.assign(edits[id]||{},patch); save(KEY_EDITS,edits);
+
+      refreshFiltersSafe(); if(typeof render==='function') render(); dlg.close();
+    });
+    return dlg;
+  }
+
+  // ensure title has room (no overlap)
+  function reserveEditSpace(){
+    document.querySelectorAll('.card').forEach(c=>{
+      const btn=c.querySelector('.edit-btn'); const title=c.querySelector('.title');
+      if(!btn||!title) return; const w=btn.getBoundingClientRect().width||0;
+      title.style.paddingRight=(w+24)+'px';
+    });
+  }
+
+  // our renderer
+  function makeRender(){
+    if(typeof filterData!=='function'||typeof sortData!=='function'||typeof paginate!=='function') return null;
+    const F=filterData,S=sortData,P=paginate;
+    return function(){
+      ensureIdsAndEdits();
+
+      const all=S(F()); const total=all.length;
+      const maxPage=Math.max(1,Math.ceil(total/state.pageSize)); if(state.page>maxPage) state.page=maxPage;
+      const pageRows=P(all);
+
+      const c=document.querySelector('#count'); if(c) c.textContent=total.toLocaleString();
+      const pi=document.querySelector('#pageInfo'); if(pi) pi.textContent=`Page ${state.page} / ${maxPage}`;
+      const prev=document.querySelector('#prev'), next=document.querySelector('#next');
+      if(prev) prev.disabled=state.page<=1; if(next) next.disabled=state.page>=maxPage;
+
+      const grid=document.querySelector('#grid'); if(!grid) return;
+      grid.innerHTML='';
+      if(pageRows.length===0){ grid.innerHTML='<div class="empty">No films match your filters.</div>'; return; }
+
+      const frag=document.createDocumentFragment();
+      pageRows.forEach((r,idx)=>{
+        const card=document.createElement('article'); card.className='card';
+        card.style.animationDelay=`${Math.min(idx*0.04,1)}s`;
+
+        const t=fmt(r.title), yr=(r.year==null||r.year==='')?NA:r.year;
+        const og=fmt(r.original), dir=fmt(r.director), notes=(r.notes&&String(r.notes).trim()!=='')?String(r.notes).trim():NA;
+
+        const titleHtml = `${highlightSafe(t)} <span class="badge">${yr}</span>`;
+        const metaHtml  = `<span class="kv"><span class="label">Original:</span> ${highlightSafe(og)}</span>
+                           <span class="kv"><span class="label">Director:</span> ${highlightSafe(dir)}</span>`;
+
+        const lb=r.lb||r.letterboxd||'', drive=r.drive||'', dl=r.dl||'';
+        const lbBtn = lb ? `<a class="btn letter" href="${lb}" target="_blank" rel="noopener noreferrer">${ICONS.letterboxd} Letterboxd</a>` : `<span class="btn na">Letterboxd: ${NA}</span>`;
+        const drBtn = drive ? `<a class="btn drive" href="${drive}" target="_blank" rel="noopener noreferrer">${ICONS.drive} Drive</a>` : `<span class="btn na">Drive: ${NA}</span>`;
+        const dlBtn = dl ? `<a class="btn download" href="${dl}" target="_blank" rel="noopener noreferrer">${ICONS.download} Download</a>` : `<span class="btn na">Download: ${NA}</span>`;
+
+        card.innerHTML = `
+          <button class="edit-btn" data-id="${r.__id||''}">${ICONS.edit} Edit</button>
+          <div class="title">${titleHtml}</div>
+          <div class="meta">${metaHtml}</div>
+          <div class="actions">${lbBtn}${drBtn}${dlBtn}</div>
+          <div class="notes"><strong>📝 Notes:</strong> ${notes}</div>
+        `;
+        frag.appendChild(card);
+      });
+      grid.appendChild(frag);
+
+      grid.querySelectorAll('.edit-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const id=btn.getAttribute('data-id');
+          const row=Array.isArray(NORM)?NORM.find(x=>x.__id===id):null; if(!row) return;
+          const dlg=getEditDialog(); const f=dlg.querySelector('#editForm');
+          f.__id.value=id; f.title.value=row.title||''; f.original.value=row.original||'';
+          f.year.value=(row.year!=null?row.year:''); f.director.value=row.director||'';
+          f.lb.value=row.lb||row.letterboxd||''; f.drive.value=row.drive||''; f.dl.value=row.dl||'';
+          f.notes.value=row.notes||''; dlg.showModal();
+        });
+      });
+      reserveEditSpace();
+    };
+  }
+
+  // patch render reliably (even if your code redefines it late)
+  function patchRenderReliably(){
+    let custom = makeRender();
+    if(!custom) return false;
+
+    // If render exists, wrap/replace; if it will be assigned later, keep trying
+    try { window.render = custom; window.__cinepediaBundle.patched = true; }
+    catch {}
+    return true;
   }
 
   function boot(){
-    // Wait a tick so other add-ons can assign __id
-    setTimeout(() => {
-      window.runFilmDedup?.();
-    }, 50);
+    installImportUI();
+    // Keep trying to patch render for a bit in case your scripts assign it late
+    let tries=0;
+    const timer=setInterval(()=>{
+      const ok = patchRenderReliably();
+      tries++;
+      if(ok && typeof render==='function'){ clearInterval(timer); render(); window.__cinepediaBundle.active=true; console.log('[CinePedia] bundle active'); }
+      else if(tries>80){ clearInterval(timer); console.warn('[CinePedia] could not hook render'); }
+    },50);
   }
 
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', boot, { once:true });
-  } else {
-    boot();
-  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot, {once:true}); }
+  else { boot(); }
 })();
 </script>
-<!-- === End Dedup Add-on === -->
+<!-- === End CinePedia Failsafe Enhancement Bundle === -->
 
 
-<script>
-// === Import hardening v2 ===
-(function(){
-  function looksLikeJSONBlob(s){
-    if (!s) return false;
-    const t = String(s).trim();
-    if (/^const\s+data\s*=|^\[\s*\{|^\{\s*\[/.test(t)) return true;
-    if (t.length > 2000 && /["'\[\]{\}]/.test(t)) return true;
-    return false;
-  }
-  function sanitizeRecord(rec){
-    const out = {};
-    for (const k in rec){
-      if (!Object.prototype.hasOwnProperty.call(rec, k)) continue;
-      let v = rec[k];
-      if (typeof v === 'string'){
-        v = v.replace(/\r\n?|\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
-        if (looksLikeJSONBlob(v)) v = '';
-      }
-      out[k] = v;
-    }
-    return out;
-  }
-  function sanitizeArray(arr){
-    if (!Array.isArray(arr)) return [];
-    return arr
-      .filter(r => r && Object.keys(r).length > 0)
-      .map(sanitizeRecord)
-      .filter(r => {
-        const vals = Object.values(r).join(' ').toLowerCase();
-        if (!vals) return false;
-        if (/^const\s+data\s*=/.test(vals)) return false;
-        return true;
-      });
-  }
-  // Hook: wrap the global CSV import append function if present.
-  const origCsvAppend = window.onCsvRowsLoaded;
-  window.onCsvRowsLoaded = function(rows){
-    const clean = sanitizeArray(rows);
-    return (typeof origCsvAppend === 'function' ? origCsvAppend(clean) : null);
-  };
-})();
-// === End hardening ===
-</script>
-<script>
-/* CSV Import Hardening — drop JSON/blobs; trim newlines; cap length */
-(function(){
-  function looksLikeJSONBlob(s){
-    if (!s) return false;
-    const t = String(s).trim();
-    if (/^const\s+data\s*=/i.test(t)) return true;
-    if ((t.startsWith('[{') && t.endsWith('}]')) || (t.startsWith('{') && t.endsWith('}'))) return true;
-    if (t.length > 2000 && /[\{\}\[\]:]/.test(t)) return true;
-    return false;
-  }
-  function cleanCell(v){
-    if (v == null) return '';
-    let s = String(v).replace(/\r?\n/g,' ').replace(/\s{2,}/g,' ').trim();
-    if (looksLikeJSONBlob(s)) return '';
-    return s;
-  }
-  function sanitizeRows(rows){
-    if (!Array.isArray(rows)) return [];
-    return rows.map(r => {
-      const out = {};
-      for (const k in r){ if (Object.prototype.hasOwnProperty.call(r,k)) out[k] = cleanCell(r[k]); }
-      return out;
-    }).filter(r => Object.values(r).some(x => String(x).trim() !== ''));
-  }
 
-  // Wrap parseCSV(text) -> rows
-  if (typeof window.parseCSV === 'function'){
-    const origParse = window.parseCSV;
-    window.parseCSV = function(text){
-      const rows = origParse(text) || [];
-      return sanitizeRows(rows);
-    };
-  }
-
-  // Wrap any append callbacks used after parsing
-  const wrap = fn => function(rows){ return fn(sanitizeRows(rows)); };
-
-  if (typeof window.onCsvRowsLoaded === 'function'){
-    window.onCsvRowsLoaded = wrap(window.onCsvRowsLoaded);
-  }
-  if (typeof window.appendRows === 'function'){
-    window.appendRows = wrap(window.appendRows);
-  }
-
-  // Last resort: wrap the global add function if present
-  if (typeof window.addFilms === 'function'){
-    const orig = window.addFilms;
-    window.addFilms = function(rows){ return orig(sanitizeRows(rows)); };
-  }
-})();
-</script>
-
-  
-
-<script>
-// === Import hardening (style-preserving) ===
-(function(){
-  function looksLikeJSONBlob(s){
-    if (!s) return false;
-    const t = String(s).trim();
-    if (/^const\s+data\s*=|^\[\s*\{|^\{\s*\[/.test(t)) return true;
-    if (t.length > 2000 && /[\{\}\[\]:]/.test(t)) return true;
-    return false;
-  }
-  function cleanCell(v){
-    if (v == null) return '';
-    let s = String(v).replace(/\r\n?|\n/g, ' ').replace(/\s{2,}/g, ' ').trim();
-    if (looksLikeJSONBlob(s)) s = '';
-    return s;
-  }
-  function sanitizeRows(rows){
-    if (!Array.isArray(rows)) return [];
-    return rows.map(r => {
-      const out = {};
-      for (const k in r){ if (Object.prototype.hasOwnProperty.call(r, k)) out[k] = cleanCell(r[k]); }
-      return out;
-    }).filter(r => Object.values(r).some(x => String(x).trim() !== ''));
-  }
-
-  // Wrap the CSV parser if present
-  if (typeof window.parseCSV === 'function'){
-    const origParse = window.parseCSV;
-    window.parseCSV = function(text){
-      try {
-        const rows = origParse(text) || [];
-        return sanitizeRows(rows);
-      } catch(e){
-        try {
-          if (window.Papa) {
-            const res = window.Papa.parse(text, {header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim()});
-            return sanitizeRows(res.data||[]);
-          }
-        } catch(_) {}
-        return [];
-      }
-    };
-  }
-
-  // Wrap known appenders
-  const wrap = fn => function(rows){ return fn(sanitizeRows(rows)); };
-  if (typeof window.onCsvRowsLoaded === 'function') window.onCsvRowsLoaded = wrap(window.onCsvRowsLoaded);
-  if (typeof window.appendRows === 'function') window.appendRows = wrap(window.appendRows);
-  if (typeof window.addFilms === 'function'){
-    const o = window.addFilms;
-    window.addFilms = function(rows){ return o(sanitizeRows(rows)); };
-  }
-})();
-// === End hardening ===
-</script>
- 
-
-<!-- PapaParse for CSV; keep this line -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-
-<script>
-/* Startup data loader: CSV first, then JSON fallback. Nothing vanishes. */
-(function(){
-  function normalizeRow(row){
-    function pick(names){
-      for (const want of names) {
-        for (const k in row) {
-          if (k && k.trim && k.trim().toLowerCase() === want.toLowerCase()) {
-            const v = String(row[k] ?? '').trim(); if (v) return v;
-          }
-        }
-      }
-      return '';
-    }
-    const title = pick(['Title','Título','Titulo','Movie','Film','Name']);
-    if (!title) return null;
-    const y = pick(['Year','Ano','Release Year']);
-    const year = y ? parseInt(y,10) : '';
-    return {
-      title,
-      original:   pick(['Original Title','Título Original','Original','Titulo Original']),
-      year:       Number.isFinite(year) ? year : '',
-      director:   pick(['Director','Diretor']),
-      letterboxd: pick(['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
-      drive:      pick(['Drive','Drive Link','Link do Drive']),
-      notes:      pick(['Notes','Observações','Obs','Note','Description'])
-    };
-  }
-  function dedupe(rows){
-    const m = new Map();
-    for (const r of rows) {
-      if (!r || !r.title) continue;
-      const k = (r.title||'').trim().toLowerCase() + '|' + String(r.year||'').trim();
-      if (!m.has(k)) m.set(k, r);
-    }
-    return [...m.values()];
-  }
-  function apply(rows){
-    rows = Array.isArray(rows) ? dedupe(rows.filter(Boolean)) : [];
-    if (!rows.length) return false;
-    if (typeof window.addFilms === 'function') { try { addFilms(rows); return true; } catch(e){} }
-    if (Array.isArray(window.NORM)) { try { window.NORM.splice(0, window.NORM.length, ...rows); if (window.render) render(); return true; } catch(e){} }
-    return false;
-  }
-  function loadJSON(){
-    return fetch('data/cinepedia.data.json', {cache:'no-store'})
-      .then(r => r.ok ? r.json() : [])
-      .catch(() => []);
-  }
-  function loadCSV(){
-    return fetch('data/cinepedia.csv', {cache:'no-store'})
-      .then(r => r.ok ? r.text() : '')
-      .then(text => new Promise(res => {
-        if (!text || !window.Papa) return res([]);
-        Papa.parse(text, {
-          header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
-          complete: out => res((out.data||[]).map(normalizeRow).filter(Boolean)),
-          error: () => res([])
-        });
-      }))
-      .catch(() => []);
-  }
-  (async function(){
-    let rows = await loadCSV();          // prefer CSV if present
-    if (!rows.length) rows = await loadJSON();  // else fallback to JSON
-    apply(rows);
-  })();
-})();
-</script>
-<!-- BEGIN: CinePedia GitHub Import & Save panel -->
-<script>
-(function(){
-  // ===== UI (fixed corner) =====
-  const panel = document.createElement('div');
-  panel.innerHTML = `
-<style>
-#ghp { position:fixed; bottom:16px; left:16px; z-index:9999; display:flex; gap:8px; flex-wrap:wrap; }
-#ghp button { padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.35); color:#fff; cursor:pointer; }
-#ghp-dialog { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:10000; }
-#ghp-card { width:min(520px, 94vw); background:#0f141a; color:#e8eef5; border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:14px; }
-#ghp-card label { display:block; font: 12px/1.2 system-ui; color:#9fb0c4; margin-top:8px }
-#ghp-card input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:#0b1015; color:#e8eef5; }
-#ghp-card .row { display:flex; gap:8px }
-#ghp-card .row > div { flex:1 }
-#ghp-msg { font:12px/1.4 system-ui; color:#9fb0c4; margin-top:8px; min-height:1.4em }
-</style>
-<div id="ghp">
-  <input id="ghp-file" type="file" accept=".csv" style="display:none">
-  <button id="ghp-import">Import CSV (save to GitHub)</button>
-  <button id="ghp-settings">GitHub settings</button>
-</div>
-<div id="ghp-dialog"><div id="ghp-card">
-  <div style="font-weight:700; margin-bottom:6px">GitHub settings</div>
-  <div class="row">
-    <div><label>Owner</label><input id="ghp-owner" placeholder="sidshot"></div>
-    <div><label>Repo</label><input id="ghp-repo" placeholder="CinePedia"></div>
-  </div>
-  <div class="row">
-    <div><label>Branch</label><input id="ghp-branch" placeholder="main"></div>
-    <div><label>Path</label><input id="ghp-path" placeholder="data/cinepedia.csv"></div>
-  </div>
-  <label>Token (Personal Access Token with “contents: write”)</label>
-  <input id="ghp-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-  <div id="ghp-msg"></div>
-  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px">
-    <button id="ghp-cancel">Close</button>
-    <button id="ghp-save">Save</button>
-  </div>
-</div></div>`;
-  document.body.appendChild(panel);
-
-  const els = {
-    file: panel.querySelector('#ghp-file'),
-    btnImport: panel.querySelector('#ghp-import'),
-    btnSettings: panel.querySelector('#ghp-settings'),
-    dialog: panel.querySelector('#ghp-dialog'),
-    owner: panel.querySelector('#ghp-owner'),
-    repo: panel.querySelector('#ghp-repo'),
-    branch: panel.querySelector('#ghp-branch'),
-    path: panel.querySelector('#ghp-path'),
-    token: panel.querySelector('#ghp-token'),
-    msg: panel.querySelector('#ghp-msg'),
-    btnSave: panel.querySelector('#ghp-save'),
-    btnCancel: panel.querySelector('#ghp-cancel'),
-  };
-
-  // ===== Persist settings in session only (tab lifetime) =====
-  const SKEY='cinepedia_gh_cfg';
-  function loadCfg(){
-    try { return JSON.parse(sessionStorage.getItem(SKEY) || '{}'); } catch { return {}; }
-  }
-  function saveCfg(cfg){
-    sessionStorage.setItem(SKEY, JSON.stringify(cfg||{}));
-  }
-  function setMsg(s){ els.msg.textContent = s || ''; }
-
-  function openSettings(){
-    const cfg = loadCfg();
-    els.owner.value = cfg.owner || 'sidshot';
-    els.repo.value = cfg.repo || 'CinePedia';
-    els.branch.value = cfg.branch || 'main';
-    els.path.value = cfg.path || 'data/cinepedia.csv';
-    els.token.value = cfg.token || '';
-    setMsg('Token is stored in sessionStorage only (cleared on tab close).');
-    els.dialog.style.display = 'flex';
-  }
-  function closeSettings(){ els.dialog.style.display = 'none'; }
-
-  els.btnSettings.onclick = openSettings;
-  els.btnSave.onclick = () => {
-    const cfg = {
-      owner: els.owner.value.trim(),
-      repo: els.repo.value.trim(),
-      branch: els.branch.value.trim(),
-      path: els.path.value.trim(),
-      token: els.token.value.trim()
-    };
-    if(!cfg.owner || !cfg.repo || !cfg.branch || !cfg.path || !cfg.token){
-      setMsg('All fields required.'); return;
-    }
-    saveCfg(cfg);
-    setMsg('Saved.');
-  };
-  els.btnCancel.onclick = closeSettings;
-  els.dialog.addEventListener('click', e => { if(e.target === els.dialog) closeSettings(); });
-
-  // ===== GitHub API helpers =====
-  function toBase64(text){
-    // UTF-8 safe base64
-    return btoa(unescape(encodeURIComponent(text)));
-  }
-  async function ghGet(owner, repo, path, branch, token){
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
-    const r = await fetch(url, { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }});
-    if (r.status === 200) return r.json();
-    return null; // not found or no access
-  }
-  async function ghPut(owner, repo, path, branch, token, contentBase64, sha){
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
-    const body = {
-      message: `Update ${path} via in-site import`,
-      content: contentBase64,
-      branch
-    };
-    if (sha) body.sha = sha;
-    const r = await fetch(url, {
-      method:'PUT',
-      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' },
-      body: JSON.stringify(body)
-    });
-    if (!r.ok) throw new Error(`GitHub PUT failed ${r.status}`);
-    return r.json();
-  }
-
-  // ===== CSV normalize (same header logic you use) =====
-  function normalizeRow(row){
-    function pick(names){
-      for(const want of names){
-        for (const k in row){
-          if (k && k.trim && k.trim().toLowerCase() === want.toLowerCase()){
-            const v = String(row[k] ?? '').trim();
-            if (v) return v;
-          }
-        }
-      }
-      return '';
-    }
-    const title = pick(['Title','Título','Titulo','Movie','Film','Name']);
-    if (!title) return null;
-    const y = pick(['Year','Ano','Release Year']);
-    const year = y ? parseInt(y, 10) : '';
-    return {
-      title,
-      original:   pick(['Original Title','Título Original','Original','Titulo Original']),
-      year:       Number.isFinite(year) ? year : '',
-      director:   pick(['Director','Diretor']),
-      letterboxd: pick(['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
-      drive:      pick(['Drive','Drive Link','Link do Drive']),
-      notes:      pick(['Notes','Observações','Obs','Note','Description'])
-    };
-  }
-  function toCSV(rows){
-    const header = ['Title','Original Title','Year','Director','Letterboxd','Drive','Notes'];
-    const esc = v => {
-      const s = String(v ?? '');
-      return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-    };
-    return header.join(',') + '\n' + rows.map(d => [
-      d.title, d.original||'', d.year||'', d.director||'', d.letterboxd||'', d.drive||'', d.notes||''
-    ].map(esc).join(',')).join('\n');
-  }
-
-  // ===== Import & Save =====
-  els.btnImport.onclick = () => els.file.click();
-  els.file.onchange = async e => {
-  const f = e.target.files && e.target.files[0];
-  if (!f) return;
-
-  const cfg = loadCfg();
-  if (!cfg.token){ openSettings(); setMsg('Provide token first.'); return; }
-
-  // Ensure PapaParse present
-  if (!window.Papa){
-    await new Promise(res => {
-      const s = document.createElement('script');
-      s.src = 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js';
-      s.onload = res; document.head.appendChild(s);
-    });
-  }
-
-  // Helpers
-  const fromBase64 = (b64) => {
-    try { return decodeURIComponent(escape(atob(b64))); } catch { return atob(b64); }
-  };
-  const dedupe = (arr) => {
-    const m = new Map();
-    for (const r of arr) {
-      if (!r || !r.title) continue;
-      const k = (r.title||'').trim().toLowerCase() + '|' + String(r.year||'').trim();
-      if (!m.has(k)) m.set(k, r);
-    }
-    return [...m.values()];
-  };
-  const normalizeRow = window.normalizeRow || (row => row); // if defined earlier, reuse
-
-  // Parse NEW CSV (uploaded now)
-  const textNew = await f.text();
-  const parsedNew = await new Promise(res => Papa.parse(textNew, {
-    header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
-    complete:o=>res(o), error:_=>res({data:[]})
-  }));
-  const rowsNew = (parsedNew.data || []).map(normalizeRow).filter(Boolean);
-  if (!rowsNew.length){ alert('No usable rows in uploaded CSV.'); e.target.value=''; return; }
-
-  // Fetch EXISTING repo CSV (if any) and parse
-  const existing = await ghGet(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token);
-  let rowsExisting = [];
-  let sha = null;
-  if (existing && existing.content) {
-    sha = existing.sha || null;
-    const textOld = fromBase64(existing.content);
-    const parsedOld = await new Promise(res => Papa.parse(textOld, {
-      header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
-      complete:o=>res(o), error:_=>res({data:[]})
-    }));
-    rowsExisting = (parsedOld.data || []).map(normalizeRow).filter(Boolean);
-  }
-
-  // MERGE + DEDUPE
-  const merged = dedupe([...(rowsExisting||[]), ...rowsNew]);
-
-  // Commit merged CSV back to repo
-  try{
-    const content = toBase64(toCSV(merged));
-    await ghPut(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token, content, sha);
-    alert('Committed merged CSV to GitHub. Hard-refresh the site.');
-  }catch(err){
-    alert('GitHub commit failed. Check token/permissions/path.');
-    console.error(err);
-  }finally{
-    e.target.value = '';
-  }
-};
-
-
-    // Ensure PapaParse present (in case not in your head)
-    if (!window.Papa){
-      await new Promise(res => {
-        const s = document.createElement('script');
-        s.src = 'https://unpkg.com/papaparse@5.4.1/papaparse.min.js';
-        s.onload = res; document.head.appendChild(s);
-      });
-    }
-
-    // Parse file as text; normalize minimally to avoid blowing up cards
-    const text = await f.text();
-    const parsed = await new Promise(res => {
-      Papa.parse(text, {
-        header:true, skipEmptyLines:true, transformHeader:h=>String(h||'').trim(),
-        complete: out => res(out), error: _ => res({data:[]})
-      });
-    });
-    const rows = (parsed.data || []).map(normalizeRow).filter(Boolean);
-    if (!rows.length){ alert('No usable rows found. Ensure CSV has a header row.'); return; }
-
-    // Commit to GitHub at cfg.path on cfg.branch
-    try{
-      const existing = await ghGet(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token);
-      const sha = existing && existing.sha ? existing.sha : null;
-      const content = toBase64(toCSV(rows));
-      await ghPut(cfg.owner, cfg.repo, cfg.path, cfg.branch, cfg.token, content, sha);
-      alert('Committed to GitHub. Hard-refresh the site to load the new CSV.');
-    }catch(err){
-      alert('GitHub commit failed. Check token/permissions/path.');
-      console.error(err);
-    }finally{
-      e.target.value = '';
-    }
-  };
-
-  // ===== Dual loader (CSV first, JSON fallback) — adds if not already present =====
-  if (!window.__cinepedia_loader_installed__){
-    window.__cinepedia_loader_installed__ = true;
-    const s = document.createElement('script');
-    s.type = 'module';
-    s.textContent = `
-      (function(){
-        function pick(row,names){
-          for(const want of names){
-            for(const k in row){
-              if(k && k.trim && k.trim().toLowerCase()===want.toLowerCase()){
-                const v=String(row[k]??'').trim(); if(v) return v;
-              }
-            }
-          } return '';
-        }
-        function normalizeRow(row){
-          const title=pick(row,['Title','Título','Titulo','Movie','Film','Name']); if(!title) return null;
-          const y=pick(row,['Year','Ano','Release Year']); const year=y?parseInt(y,10):'';
-          return {
-            title,
-            original: pick(row,['Original Title','Título Original','Original','Titulo Original']),
-            year: Number.isFinite(year)?year:'',
-            director: pick(row,['Director','Diretor']),
-            letterboxd: pick(row,['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
-            drive: pick(row,['Drive','Drive Link','Link do Drive']),
-            notes: pick(row,['Notes','Observações','Obs','Note','Description'])
-          };
-        }
-        function dedupe(arr){
-          const m=new Map();
-          for(const r of arr){
-            if(!r||!r.title) continue;
-            const k=(r.title||'').trim().toLowerCase()+'|'+String(r.year||'').trim();
-            if(!m.has(k)) m.set(k,r);
-          }
-          return [...m.values()];
-        }
-        function apply(rows){
-          rows = Array.isArray(rows)?dedupe(rows.filter(Boolean)):[];
-          if(!rows.length) return false;
-          if(typeof window.addFilms==='function'){ try{ addFilms(rows); return true; } catch{} }
-          if(Array.isArray(window.NORM)){ try{ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); return true; } catch{} }
-          return false;
-        }
-        function loadJSON(){ return fetch('data/cinepedia.data.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).catch(()=>[]); }
-        function loadCSV(){
-          return fetch('data/cinepedia.csv',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>new Promise(res=>{
-            if(!t||!window.Papa) return res([]);
-            Papa.parse(t,{header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim(),
-              complete:o=>res((o.data||[]).map(normalizeRow).filter(Boolean)), error:()=>res([])});
-          })).catch(()=>[]);
-        }
-        (async function(){
-          let rows = await loadCSV();
-          if(!rows.length) rows = await loadJSON();
-          apply(rows);
-        })();
-      })();
-    `;
-    document.body.appendChild(s);
-  }
-})();
-</script>
-<!-- END: CinePedia GitHub Import & Save panel -->
-<!-- CSV-first loader with JSON fallback + cache-busting -->
-<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
-<script>
-(function(){
-  function pick(row,names){
-    for(const want of names){
-      for(const k in row){
-        if(k && k.trim && k.trim().toLowerCase()===want.toLowerCase()){
-          const v=String(row[k]??'').trim(); if(v) return v;
-        }
-      }
-    }
-    return '';
-  }
-  function normalizeRow(row){
-    const title = pick(row,['Title','Título','Titulo','Movie','Film','Name']); if(!title) return null;
-    const y = pick(row,['Year','Ano','Release Year']); const year = y?parseInt(y,10):'';
-    return {
-      title,
-      original:   pick(row,['Original Title','Título Original','Original','Titulo Original']),
-      year:       Number.isFinite(year)?year:'',
-      director:   pick(row,['Director','Diretor']),
-      letterboxd: pick(row,['Letterboxd','Letterboxd Link','Link do Letterboxd','LB']),
-      drive:      pick(row,['Drive','Drive Link','Link do Drive']),
-      notes:      pick(row,['Notes','Observações','Obs','Note','Description'])
-    };
-  }
-  function dedupe(rows){
-    const m=new Map();
-    for(const r of rows){
-      if(!r||!r.title) continue;
-      const k=(r.title||'').trim().toLowerCase()+'|'+String(r.year||'').trim();
-      if(!m.has(k)) m.set(k,r);
-    }
-    return [...m.values()];
-  }
-  // REPLACE mode (CSV defines the catalogue). To MERGE instead, swap applyReplace(...) for applyMerge(...) below.
-  function applyReplace(rows){
-    rows = dedupe(rows);
-    if(Array.isArray(window.NORM)){ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); return; }
-    if(typeof window.addFilms==='function'){ try{ addFilms(rows); }catch(e){} }
-  }
-  function applyMerge(rows){
-    const base = Array.isArray(window.NORM)?window.NORM.slice():[];
-    rows = dedupe(base.concat(rows));
-    if(Array.isArray(window.NORM)){ window.NORM.splice(0, window.NORM.length, ...rows); if(window.render) render(); }
-  }
-
-  const bust = 'v=' + Date.now();
-
-  fetch('data/cinepedia.csv?'+bust, {cache:'no-store'})
-    .then(r=>r.ok?r.text():'')
-    .then(text => new Promise(res=>{
-      if(!text){ res([]); return; }
-      Papa.parse(text,{header:true,skipEmptyLines:true,transformHeader:h=>String(h||'').trim(),
-        complete:o=>res((o.data||[]).map(normalizeRow).filter(Boolean)), error:()=>res([])});
-    }))
-    .then(rows => {
-      if(rows.length){ applyReplace(rows); return; }
-      return fetch('data/cinepedia.data.json?'+bust, {cache:'no-store'})
-        .then(r=>r.ok?r.json():[])
-        .then(js => Array.isArray(js)?js.map(normalizeRow).filter(Boolean):[])
-        .then(applyReplace)
-        .catch(()=>{});
-    })
-    .catch(()=>{});
-})();
-</script>
-<!-- Legal gate -->
-<div id="legal-gate" class="gate-backdrop" hidden>
-  <div class="gate-dialog" role="dialog" aria-labelledby="gate-title" aria-describedby="gate-text">
-    <h2 id="gate-title" class="gate-title">Legal notice</h2>
-    <p id="gate-text" class="gate-text">
-      All the films are property of their respective owners. We are just guiding you.
-    </p>
-    <div class="gate-actions">
-      <button id="gate-back"  class="gate-btn danger">FBI! Go back</button>
-      <button id="gate-enter" class="gate-btn primary">I am the Law</button>
-    </div>
-  </div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  var gate  = document.getElementById('legal-gate');
-  if (!gate) return;
-
-  var back  = document.getElementById('gate-back');
-  var enter = document.getElementById('gate-enter');
-
-  function showGate() {
-    gate.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    setTimeout(function () { try { back && back.focus(); } catch (e) {} }, 0);
-  }
-  function closeGate() {
-    gate.hidden = true;
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-  }
-
-  back  && back.addEventListener('click', function () {
-    window.location.href = 'https://www.google.com/';
-  });
-  enter && enter.addEventListener('click', closeGate);
-
-  showGate();
-});
-</script>
 
 </body>
 </html>
