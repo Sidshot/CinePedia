@@ -96,26 +96,57 @@ app.post('/api/import', async (req, res) => {
         const imports = req.body;
         if (!Array.isArray(imports)) return res.status(400).json({ error: 'Array required' });
 
-        let prep = imports.filter(f => f.title).map(f => ({
-            ...f,
-            __id: generateId(f)
-        }));
+        const results = {
+            total: imports.length,
+            success: 0,
+            failed: 0,
+            errors: []
+        };
 
-        if (prep.length === 0) return res.json({ count: 0 });
+        const operations = [];
 
-        // Use insertMany (efficient)
-        // Note: duplicates on __id will throw error if we set unique: true.
-        // For simplicity, we might just insert and ignore errors or ordered: false
-        try {
-            await Movie.insertMany(prep, { ordered: false });
-        } catch (e) {
-            // Ignore duplicate key errors, continue with others
+        // Validate and Prepare
+        imports.forEach((f, idx) => {
+            // Row number (Visual 1-based)
+            const rowNum = idx + 1;
+
+            if (!f.title) {
+                results.failed++;
+                results.errors.push(`Row ${rowNum}: Missing 'title'`);
+                return;
+            }
+
+            // Create Operation
+            const doc = { ...f, __id: generateId(f) };
+
+            // Push to operations for bulkWrite (more robust than insertMany with errors)
+            operations.push({
+                insertOne: { document: doc }
+            });
+        });
+
+        if (operations.length > 0) {
+            try {
+                // ordered: false ensures one failure doesn't stop the rest
+                const bulkRes = await Movie.bulkWrite(operations, { ordered: false });
+                results.success = bulkRes.insertedCount;
+            } catch (bulkError) {
+                // If there are write errors (e.g. duplicates if we had unique index, though we don't yet)
+                if (bulkError.writeErrors) {
+                    results.success = bulkError.result.insertedCount; // Partial success
+                    results.failed += bulkError.writeErrors.length;
+                    bulkError.writeErrors.forEach(we => {
+                        results.errors.push(`Row ? (Duplicate/Error): ${we.errmsg}`);
+                    });
+                }
+            }
         }
 
-        res.json({ success: true, count: prep.length });
+        res.json(results);
+
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Import failed' });
+        res.status(500).json({ error: 'Import failed: ' + err.message });
     }
 });
 

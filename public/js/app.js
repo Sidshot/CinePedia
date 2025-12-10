@@ -475,9 +475,18 @@ function handleCSVUpload() {
                 });
 
                 if (!res.ok) throw new Error('Import failed on server');
-                const json = await res.json();
+                const result = await res.json();
 
-                alert(`Imported ${json.count} films successfully.`);
+                let msg = `✅ Import Complete!\nSuccess: ${result.success}`;
+                if (result.failed > 0) {
+                    msg += `\n❌ Failed: ${result.failed}`;
+                    // Show first 5 errors to avoid spam
+                    const topErrors = result.errors.slice(0, 5).join('\n');
+                    msg += `\n\nErrors:\n${topErrors}`;
+                    if (result.errors.length > 5) msg += `\n...and ${result.errors.length - 5} more.`;
+                }
+
+                alert(msg);
                 fetchData();
             } catch (err) {
                 alert('CSV import failed: ' + err.message);
