@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Film Catalog · CinePedia</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- Lock Screen Overlay -->
+  <div id="lockScreen">
+    <div class="lock-box">
+      <div class="lock-title">Unlock CinePedia</div>
+      <input type="password" id="lockInput" class="lock-input" placeholder="Password" autofocus>
+      <button id="lockBtn" class="lock-btn">Unlock Catalog</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="container">
+
+      <!-- Top Row: Message Me (Left) | Brand (Center) | Spacer (Right) -->
+      <div class="header-top">
+        <a href="https://www.instagram.com/bored__sid?igsh=MWoyNzVjMXhmb3g5eQ==" target="_blank"
+          rel="noopener noreferrer" class="msg-me-link">
+          <svg class="ui-icon" viewBox="0 0 24 24" style="fill:currentColor;stroke:none;">
+            <path
+              d="M7.8,2H16.2C19.4,2 22,4.6 22,7.8V16.2A5.8,5.8 0 0,1 16.2,22H7.8C4.6,22 2,19.4 2,16.2V7.8A5.8,5.8 0 0,1 7.8,2M7.6,4A3.6,3.6 0 0,0 4,7.6V16.4C4,18.39 5.61,20 7.6,20H16.4A3.6,3.6 0 0,0 20,16.4V7.6C20,5.61 18.39,4 16.4,4H7.6M12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M18,5A1.25,1.25 0 0,1 16.75,6.25A1.25,1.25 0 0,1 15.5,5A1.25,1.25 0 0,1 16.75,3.75A1.25,1.25 0 0,1 18,5Z" />
+          </svg>
+          <span>Message Me</span>
+        </a>
+
+        <div class="brand-center">
+          <svg class="main-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z" />
+            <path d="M7 2v20" />
+            <path d="M17 2v20" />
+            <path d="M2 12h20" />
+            <path d="M2 7h5" />
+            <path d="M2 17h5" />
+            <path d="M17 17h5" />
+            <path d="M17 7h5" />
+            <path d="M12 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" fill="currentColor" stroke="none" />
+          </svg>
+          <h1>CineAmore</h1>
+        </div>
+
+        <div class="header-spacer"></div>
+      </div>
+
+      <div class="controls-wrapper">
+        <!-- Search -->
+        <div class="control-group" style="grid-column: 1 / -1;">
+          <label for="q" class="visually-hidden">Search</label>
+          <input id="q" type="search" placeholder="Search title / original title / director…">
+        </div>
+
+        <!-- Year Filter -->
+        <div class="control-group">
+          <label for="year" class="visually-hidden">Filter by Year</label>
+          <select id="year">
+            <option value="all">All Years</option>
+          </select>
+        </div>
+
+        <!-- Director Filter -->
+        <div class="control-group">
+          <label for="director" class="visually-hidden">Filter by Director</label>
+          <select id="director">
+            <option value="all">All Directors</option>
+          </select>
+        </div>
+
+        <!-- Link Filter -->
+        <div class="control-group">
+          <label for="filter" class="visually-hidden">Filter by Links</label>
+          <select id="filter">
+            <option value="all">Show: All</option>
+            <option value="both_links">Show: With both links</option>
+            <option value="missing_any">Show: Missing any link</option>
+            <option value="missing_letterboxd">Show: Missing Letterboxd</option>
+            <option value="missing_drive">Show: Missing Drive</option>
+            <option value="no_year">Show: No Year</option>
+          </select>
+        </div>
+
+        <!-- Sort -->
+        <div class="control-group">
+          <label for="sort" class="visually-hidden">Sort</label>
+          <select id="sort">
+            <option value="year_desc">Sort: Year ↓</option>
+            <option value="year_asc">Sort: Year ↑</option>
+            <option value="title_asc">Sort: Title A→Z</option>
+            <option value="original_asc">Sort: Original Title A→Z</option>
+            <option value="director_asc">Sort: Director A→Z</option>
+          </select>
+        </div>
+
+        <!-- Theme/Layout Toggles -->
+        <div class="control-group" style="flex-direction: row; gap: 10px;">
+          <button id="themeBtn" class="btn-ghost" aria-label="Toggle dark/light theme"></button>
+          <button id="compactBtn" class="btn-ghost" aria-label="Toggle compact view"></button>
+        </div>
+      </div>
+
+      <!-- Toolbar (Counters & Pagination) -->
+      <div class="toolbar">
+        <div class="counter"><span id="count">0</span> films</div>
+        <div class="pagination">
+          <button id="prev" class="page-btn">Prev</button>
+          <div id="pageInfo" class="counter"></div>
+          <button id="next" class="page-btn">Next</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="grid" class="grid"></div>
+
+    <!-- Bottom Pagination -->
+    <div class="pagination-bottom-container">
+      <div class="pagination" id="paginationBottom">
+        <!-- Wired via JS -->
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">Built by IndoCurry. Use '/' to search.</div>
+  </footer>
+
+  <button id="scrollTopBtn" class="btn-ghost" aria-label="Scroll to top">
+    <svg class="ui-icon" viewBox="0 0 24 24">
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  </button>
+
+  <!-- Logic -->
+  <script src="js/app.js"></script>
+
+</body>
+
+</html>
