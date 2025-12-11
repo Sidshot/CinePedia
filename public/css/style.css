@@ -563,7 +563,8 @@ footer {
   width: auto;
 }
 
-.ui-icon {
+.ui-icon,
+.icon {
   width: 18px;
   height: 18px;
   stroke: currentColor;
@@ -571,6 +572,11 @@ footer {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Ensure SVG fills icon class correctly if it uses fill instead of stroke */
+.icon path {
+  fill: currentColor;
 }
 
 #scrollTopBtn {

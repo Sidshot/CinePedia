@@ -177,6 +177,26 @@ function setupListeners() {
         });
     }
 
+    // Grid Icon
+    const ICONS = {
+        // ... (existing)
+        grid: `<svg viewBox="0 0 24 24" class="icon"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z" /></svg>`
+    };
+
+    // ... (Inside Listeners)
+    // Compact Mode
+    const compactBtn = document.querySelector('#compactBtn');
+    if (compactBtn) {
+        // Init Icon
+        compactBtn.innerHTML = `<svg viewBox="0 0 24 24" class="icon"><path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm0 11h7v7h-7v-7zM3 14h7v7H3v-7z"/></svg> View`;
+
+        compactBtn.addEventListener('click', () => {
+            document.body.classList.toggle('compact');
+            // Optional: Save preference
+            // localStorage.setItem('compact', document.body.classList.contains('compact')); 
+        });
+    }
+
     // Comfort Mode
     const comfortCheck = document.querySelector('#comfortToggle');
     if (comfortCheck) {
