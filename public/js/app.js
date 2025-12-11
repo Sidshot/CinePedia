@@ -483,9 +483,10 @@ function render() {
         const dl = r.dl || '';
 
         // GLOSSY BUTTONS
-        const lbBtn = lb ? `<a class="glossy-box btn-glossy letter" href="${lb}" target="_blank" rel="noopener noreferrer">${ICONS.letterboxd} Letterboxd</a>` : `<span class="btn na" style="opacity:0.3;font-size:0.75rem;">Letterboxd: ${NA}</span>`;
-        const drBtn = dr ? `<a class="glossy-box btn-glossy drive" href="${dr}" target="_blank" rel="noopener noreferrer">${ICONS.drive} Drive</a>` : `<span class="btn na" style="opacity:0.3;font-size:0.75rem;">Drive: ${NA}</span>`;
-        const dlBtn = dl ? `<a class="glossy-box btn-glossy download" href="${dl}" target="_blank" rel="noopener noreferrer">${ICONS.download} Download</a>` : `<span class="btn na" style="opacity:0.3;font-size:0.75rem;">Download: ${NA}</span>`;
+        // GLOSSY BUTTONS
+        const lbBtn = lb ? `<a class="glossy-box btn-glossy letter" href="${lb}" target="_blank" rel="noopener noreferrer">${ICONS.letterboxd} Letterboxd</a>` : '';
+        const drBtn = dr ? `<a class="glossy-box btn-glossy drive" href="${dr}" target="_blank" rel="noopener noreferrer">${ICONS.drive} Drive</a>` : '';
+        const dlBtn = dl ? `<a class="glossy-box btn-glossy download" href="${dl}" target="_blank" rel="noopener noreferrer">${ICONS.download} Download</a>` : '';
 
 
         // Poster HTML with Link
