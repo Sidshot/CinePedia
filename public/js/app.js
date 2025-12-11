@@ -61,12 +61,12 @@ function initLockScreen() {
                     fetchData(); // Load data now
                 }, 500); // Fade out
             } else {
-                // Fail
-                window.location.href = 'https://google.com';
+                // Fail - Rickroll
+                window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
             }
         } catch (e) {
             console.error(e);
-            alert('Auth Error');
+            alert('Auth Error: ' + e.message);
         }
     };
 
@@ -90,7 +90,7 @@ async function fetchData() {
         populateFilters();
         render();
     } catch (e) {
-        document.querySelector('#grid').innerHTML = '<div class="error">Failed to load payload.</div>';
+        document.querySelector('#grid').innerHTML = `<div class="error">Failed to load payload. <br/><small>${e.message}</small></div>`;
         console.error(e);
     } finally {
         // Hide Loader
