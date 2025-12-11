@@ -188,6 +188,15 @@ function reserveEditSpace() {
     });
 }
 
+function getPosterUrl(title, year) {
+    // Bing Image Search Hack
+    // w=300, h=450 (2:3 aspect ratio), c=7 (Smart Crop)
+    // p=0 means return image directly if possible? No, Bing returns a page unless stripped.
+    // Actually simply using th?q returns a thumbnail which is an image.
+    const query = encodeURIComponent(`${title} ${year || ''} movie poster`);
+    return `https://tse2.mm.bing.net/th?q=${query}&w=300&h=450&c=7&rs=1&p=0`;
+}
+
 function render() {
     ensureIdsAndEdits();
 
@@ -256,8 +265,13 @@ function render() {
         const drBtn = dr ? `<a class="btn drive" href="${dr}" target="_blank" rel="noopener noreferrer">${ICONS.drive} Drive</a>` : `<span class="btn na">Drive: ${NA}</span>`;
         const dlBtn = dl ? `<a class="btn download" href="${dl}" target="_blank" rel="noopener noreferrer">${ICONS.download} Download</a>` : `<span class="btn na">Download: ${NA}</span>`;
 
+        // Poster HTML
+        const posterUrl = getPosterUrl(t, yr);
+        const posterHtml = `<img src="${posterUrl}" class="card-poster" alt="${escapeHtml(t)}" loading="lazy" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIHN0cm9rZS13aWR0aD0iMSI+PHBhdGggZD0iTTIxIDE1djRhMiAyIDAgMCAxLTIgMmgtNWwtNS01bDUtNSAzIDN6Ii8+PC9zdmc+';this.style.opacity=0.3;">`;
+
         card.innerHTML = `
             <button class="edit-btn" data-id="${r.__id || ''}">${ICONS.edit} Edit</button>
+            ${posterHtml}
             <div class="title">${titleHtml}</div>
             <div class="meta">${metaHtml}</div>
             <div class="actions">${lbBtn}${drBtn}${dlBtn}</div>
@@ -535,8 +549,6 @@ function refreshFilters() {
     d.appendChild(fragD);
 
     y.value = currentY;
-    // If previous value no longer exists, reset to 'all' or keep broken value? 
-    // Original behavior seemed to imply retention. If value missing, select 'all'.
     if (y.value !== currentY) y.value = 'all';
 
     d.value = currentD;
@@ -564,12 +576,6 @@ function init() {
 
     if (f) f.value = state.filter;
     if (s) s.value = state.sort; // Init Sort Value
-
-    // Apply sorting selection visual if you had one, but the UI for sorting seems hidden in original code
-    // except for maybe logic I missed? 
-    // Ah, sort is internal in state, maybe controlled by headers? 
-    // Original code didn't show sort buttons in my snippets, but state had 'sort'.
-    // I will assume sort stays default or matches prefs.
 
     refreshFilters(); // Populate dropdowns
     if (y) y.value = state.year;
@@ -616,16 +622,6 @@ function init() {
 
     // Pagination Logic (Dual Controls)
     const handlePageChange = (delta) => {
-        const total = filterData().length; // Recalculate to be safe or store in state?
-        // Actually render() calculates total and maxPage. 
-        // We can check render state, or just let render handle clamping.
-        // But to clamp BEFORE render, we need maxPage.
-        // Let's just increment/decrement and let render clamp it?
-        // Render already has: if (state.page > maxPage) state.page = maxPage;
-        // But it doesn't clamp < 1 explicitly on set? 
-        // It does: Math.max(1, ...)
-
-        // Better: simple increment, render clamps.
         state.page += delta;
         if (state.page < 1) state.page = 1;
 
@@ -633,24 +629,7 @@ function init() {
         document.getElementById('scrollTopBtn').click();
     };
 
-    const wirePagination = (idPrefix) => {
-        const prev = document.querySelector(idPrefix ? `#${idPrefix} #prev` : '#prev');
-        const next = document.querySelector(idPrefix ? `#${idPrefix} #next` : '#next');
-
-        // Top Toolbar has IDs direct in HTML: #prev, #next
-        // We need to support the new Bottom one.
-        // Let's rely on class checking or just discrete listeners if IDs are unique.
-        // In index.html, I used ID="prev" which is unique.
-        // FOR BOTTOM, I need new IDs or generic handling.
-        // I haven't added button HTML to bottom container yet? 
-        // Wait, render() creates buttons? No, index.html has static buttons for Top.
-        // I need to inject buttons for Bottom or have static HTML there.
-        // I put <div id="paginationBottom"></div>. I will inject buttons there.
-    };
-
     // Global Prev/Next (Top)
-    // Note: I left IDs #prev and #next in top toolbar in index.html.
-    // I should wire those.
     const topPrev = document.getElementById('prev');
     const topNext = document.getElementById('next');
     if (topPrev) topPrev.onclick = () => handlePageChange(-1);
@@ -668,11 +647,6 @@ function init() {
         bottomContainer.querySelector('.next-btn').onclick = () => handlePageChange(1);
     }
 
-    // Override render to update bottom controls too
-    const originalRender = render;
-    // We can't easily hook local function 'render'. 
-    // I will edit the 'render' function definition instead.
-
     // Scroll to Top
     const scrollBtn = document.getElementById('scrollTopBtn');
     window.onscroll = () => {
@@ -684,7 +658,6 @@ function init() {
     // Install Import/Add Buttons (Top)
     const toolbar = document.querySelector('.toolbar');
     if (toolbar) {
-        // ... existing logic ...
         const right = toolbar.querySelector('.pagination');
         if (right) {
             const btnAdd = document.createElement('button');
