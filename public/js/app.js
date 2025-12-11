@@ -1,151 +1,202 @@
-'use strict';
-
-// Global State and Data
-let NORM = []; // This will hold the normalized movie data
-let state = {
-    q: "",
-    year: "all",
-    director: "all",
-    sort: "year_desc",
+const state = {
+    sort: 'year_desc',
+    filter: 'all',
+    q: '',
     page: 1,
-    pageSize: 150,
-    filter: "all",
-    compact: false
+    pageSize: 100, // Reduced from 500 for perf? Or keeping 500? User had 725 total. Let's stick to 100 per page or so.
+    // Actually user had infinite scroll desire, but pagination is safer.
+    // Let's keep 100.
 };
 
-// Config & Constants
-const KEY_ADDS = 'film_user_adds_neo';
-const KEY_EDITS = 'film_user_edits_neo';
-const PREFS_KEY = 'film_prefs_neo';
+// Data Store
+let RAW_DATA = [];
+let NORM = [];
 
+// Icons
 const ICONS = {
-    themeLight: '<svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m8.5-12.5l-.7.7M4.2 19.8l-.7.7M21 12h-1M4 12H3m16.8-.7l.7-.7M3.5 4.2l.7-.7"/><circle cx="12" cy="12" r="4"/></svg> Light',
-    themeDark: '<svg class="ui-icon" viewBox="0 0 24 24"><path d="M12 21a9 9 0 110-18 9 9 0 010 18z"/></svg> Dark',
-    densityCompact: '<svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Compact',
-    densityComfort: '<svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Comfort',
-    letterboxd: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>',
-    drive: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l7 12-7 8-7-8z"/></svg>',
-    download: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10m0 0 4-4m-4 4-4-4M4 21h16"/></svg>',
-    edit: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04l-2.34-2.34-1.83 1.83 3.75 3.75L20.71 7.04z"/></svg>',
-    info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>'
+    letterboxd: `<svg viewBox="0 0 24 24" class="icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>`, // Simple placeholder, real one is diff
+    drive: `<svg viewBox="0 0 24 24" class="icon"><path d="M12.01 2.02c-.17 0-.34.04-.5.13L2.09 7.6c-.32.18-.5.54-.48.91 0 .37.21.71.55.88l9.42 4.71c.15.08.32.12.49.12.18 0 .35-.04.5-.12l9.4-4.7c.34-.17.55-.52.55-.89 0-.36-.2-.71-.52-.89L12.51 2.15c-.16-.09-.33-.13-.5-.13zM12 14.4L3.62 10.2l8.39 4.2 8.35-4.18L12 14.4z"/><path d="M4 12v6c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-6l-8 4-8-4z"/></svg>`, // Folderish
+    download: `<svg viewBox="0 0 24 24" class="icon"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" class="icon"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`,
+    info: `<svg viewBox="0 0 24 24" class="icon"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
 };
 
-// Utilities
-const NA = 'N/A';
-const fmt = v => (v == null || String(v).trim() === '') ? NA : String(v).trim();
-const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || d) } catch { return JSON.parse(d) } };
-const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-const norm = s => (s || "").toLowerCase();
-const escapeHtml = str => {
-    if (!str) return '';
-    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-};
+const NA = '<span class="na">N/A</span>';
 
-function hash53(str) {
-    let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;
-    for (let i = 0; i < str.length; i++) {
-        const c = str.charCodeAt(i);
-        h1 = Math.imul(h1 ^ c, 2654435761);
-        h2 = Math.imul(h2 ^ c, 1597334677);
-    }
-    h1 = (h1 ^ (h1 >>> 16)) >>> 0;
-    h2 = (h2 ^ (h2 >>> 13)) >>> 0;
-    return (h2 * 4294967296 + h1).toString(36);
-}
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+    setupListeners();
+});
 
-// Data Normalization
-function toNormalized(obj) {
-    const g = (k, ...alts) => {
-        for (const key of [k, ...alts]) {
-            if (obj[key] != null && String(obj[key]).trim() !== '') return String(obj[key]).trim();
-        }
-        return '';
-    };
-    const title = g('title', 'Title', 'Título', 'Titulo');
-    const original = g('original', 'Original Title', 'Título Original', 'Titulo Original');
-    const director = g('director', 'Director', 'Diretor');
-    const yearStr = g('year', 'Year', 'Ano');
-    const lb = g('lb', 'letterboxd', 'Letterboxd', 'Letterboxd Link', 'Link do Letterboxd');
-    const drive = g('drive', 'Drive', 'Drive Link', 'Link do Drive');
-    const dl = g('dl', 'download', 'Download', 'Download Link', 'Link de Download');
-    const year = yearStr ? (parseInt(yearStr, 10) || null) : null;
-
-    // Notes can now be legacy, but we still preserve them structure-wise just in case
-    // though the UI won't show them anymore.
-    const __id = obj.__id || obj._id || null;
-
-    return { __id, title, original, year, director, lb, drive, dl };
-}
-
-// Data Fetching
+// 1. Fetch Data
 async function fetchData() {
+    // Show Loader
+    const loader = document.getElementById('app-loader');
+    if (loader) loader.classList.remove('hidden');
+
     try {
-        const response = await fetch('/api/movies');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const rawData = await response.json();
-
-        // Normalize server data
-        NORM = rawData.map(toNormalized);
-
-        // Client-side ID Generation for any missing IDs (legacy or safety)
-        ensureIdsAndEdits();
-
-        // Initial setup
-        init();
-        document.getElementById('app-loader').classList.add('hidden');
-    } catch (error) {
-        console.error('Failed to fetch data:', error);
-        document.getElementById('grid').innerHTML = `<div class="empty">Error loading data. Please try again.</div>`;
-        document.getElementById('app-loader').classList.add('hidden');
+        const res = await fetch('/api/movies');
+        if (!res.ok) throw new Error('Failed to load');
+        RAW_DATA = await res.json();
+        normalize();
+        populateFilters();
+        render();
+    } catch (e) {
+        document.querySelector('#grid').innerHTML = '<div class="error">Failed to load payload.</div>';
+        console.error(e);
+    } finally {
+        // Hide Loader
+        if (loader) loader.classList.add('hidden');
     }
 }
 
-// Core Logic: ID Assignment & Edit Application
-function ensureIdsAndEdits() {
-    if (!Array.isArray(NORM)) return;
-    for (const r of NORM) {
-        if (!r.__id) {
-            const fp = [
-                r.title || '', r.original || '', r.year ?? '', r.director || '',
-                r.lb || '', r.drive || '', r.dl || ''
-            ].join('|').toLowerCase();
-            r.__id = `fm_temp_${hash53(fp)}`;
-        }
-    }
+// 2. Normalize
+function normalize() {
+    NORM = RAW_DATA.map(r => ({
+        ...r,
+        title: (r.title || '').trim(),
+        original: (r.original || '').trim(), // Original Title
+        year: r.year ? parseInt(r.year) : null,
+        director: (r.director || '').trim(),
+        // Links
+        lb: r.letterboxd,
+        drive: r.drive,
+        dl: r.download,
+        // Search blob
+        _s: [(r.title || ''), (r.original || ''), (r.director || ''), (r.year || '')].join(' ').toLowerCase()
+    }));
 }
 
-// Core Logic: Filtering
-function passFilter(r) {
-    const yearOk = (state.year === "all" || String(r.year) === state.year);
-    const directorOk = (state.director === "all" || (r.director && norm(r.director).includes(norm(state.director))));
-    if (!yearOk || !directorOk) return false;
+// 3. Populate Filters
+function populateFilters() {
+    // Years
+    const years = [...new Set(NORM.map(x => x.year).filter(Boolean))].sort((a, b) => b - a);
+    const ySel = document.querySelector('#yearFilter');
+    ySel.innerHTML = '<option value="all">All Years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
 
-    const hasL = !!r.lb;
-    const hasD = !!r.drive;
-
-    switch (state.filter) {
-        case 'both_links': return hasL && hasD;
-        case 'missing_any': return !hasL || !hasD;
-        case 'missing_letterboxd': return !hasL;
-        case 'missing_drive': return !hasD;
-        case 'no_year': return !r.year;
-        default: return true;
-    }
+    // Directors
+    const dirs = [...new Set(NORM.map(x => x.director).filter(Boolean))].sort();
+    const dSel = document.querySelector('#dirFilter');
+    dSel.innerHTML = '<option value="all">All Directors</option>' + dirs.map(d => `<option value="${d}">${d}</option>`).join('');
 }
 
-function filterData() {
-    const q = norm(state.q);
-    return NORM.filter(r => {
-        if (!passFilter(r)) return false;
-        if (!q) return true;
-        return (r.title && norm(r.title).includes(q)) ||
-            (r.original && norm(r.original).includes(q)) ||
-            (r.director && norm(r.director).includes(q));
+// 4. Setup Listeners
+function setupListeners() {
+    // Search
+    const q = document.querySelector('#q');
+    q.addEventListener('input', (e) => {
+        state.q = e.target.value.toLowerCase();
+        state.page = 1;
+        render();
+    });
+
+    // Filters
+    document.querySelector('#yearFilter').addEventListener('change', (e) => {
+        state.filter = e.target.value === 'all' ? 'all' : { type: 'year', val: parseInt(e.target.value) };
+        state.page = 1;
+        render();
+    });
+
+    document.querySelector('#dirFilter').addEventListener('change', (e) => {
+        state.filter = e.target.value === 'all' ? 'all' : { type: 'director', val: e.target.value };
+        state.page = 1;
+        render();
+    });
+
+    document.querySelector('#missingFilter').addEventListener('change', (e) => {
+        const v = e.target.value;
+        if (v === 'all') state.filter = 'all';
+        else state.filter = { type: 'missing', field: v };
+        state.page = 1;
+        render();
+    });
+
+    document.querySelector('#sortFilter').addEventListener('change', (e) => {
+        state.sort = e.target.value;
+        render(); // No page reset needed usually, but maybe good practice?
+    });
+
+
+    // Theme
+    const themeBtn = document.querySelector('#themeToggle');
+    themeBtn.addEventListener('click', () => {
+        const curr = document.documentElement.getAttribute('data-theme');
+        const next = curr === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        themeBtn.innerHTML = next === 'light' ? `☀ Light` : `${ICONS.letterboxd.replace('path', 'circle')} Dark`;
+        localStorage.setItem('theme', next);
+    });
+
+    // Comfort Mode
+    const comfortCheck = document.querySelector('#comfortToggle');
+    comfortCheck.addEventListener('change', (e) => {
+        document.body.classList.toggle('comfort-mode', e.target.checked);
+    });
+
+    // Pagination
+    document.querySelector('#prev').addEventListener('click', () => {
+        if (state.page > 1) { state.page--; render(); window.scrollTo(0, 0); }
+    });
+    document.querySelector('#next').addEventListener('click', () => {
+        const max = Math.ceil(sortData(filterData()).length / state.pageSize);
+        if (state.page < max) { state.page++; render(); window.scrollTo(0, 0); }
+    });
+
+    // New Film Btn
+    document.querySelector('.add-btn').addEventListener('click', () => {
+        openEditDialog(); // No ID = Create
+    });
+
+    // CSV Import
+    document.querySelector('.csv-btn').addEventListener('click', () => {
+        getDialog('csvDialog', `
+            <h2>Import CSV</h2>
+            <br>
+            <textarea id="csvInput" placeholder="Paste CSV content here..." style="width:100%;height:200px;font-family:monospace;"></textarea>
+            <div class="actions" style="justify-content:flex-end;margin-top:10px;">
+                <button class="btn btn-ghost">Cancel</button>
+                <button class="btn btn-primary" onclick="processCSV()">Import</button>
+            </div>
+        `).showModal();
     });
 }
 
-// Core Logic: Sorting
+function ensureIdsAndEdits() {
+    // Helper to wire up bottom pagination logic if it strictly relies on render()
+    // It's checked inside render()
+}
+
+// Logic: Filtering
+function filterData() {
+    let base = NORM;
+
+    // 1. Text Search
+    if (state.q) {
+        base = base.filter(x => x._s.includes(state.q));
+    }
+
+    // 2. Dropdowns
+    if (state.filter !== 'all') {
+        const f = state.filter;
+        if (f.type === 'year') {
+            base = base.filter(x => x.year === f.val);
+        } else if (f.type === 'director') {
+            base = base.filter(x => x.director === f.val);
+        } else if (f.type === 'missing') {
+            // "Show: Missing X"
+            if (f.field === 'letterboxd') base = base.filter(x => !x.lb);
+            else if (f.field === 'drive') base = base.filter(x => !x.drive);
+            else if (f.field === 'download') base = base.filter(x => !x.dl);
+            else if (f.field === 'any') base = base.filter(x => (!x.lb || !x.drive || !x.dl));
+        }
+    }
+    return base;
+}
+
+// Logic: Sorting
 function sortData(rows) {
+    // year_desc/asc, title_asc, original_asc, director_asc
     const byYearDesc = (a, b) => ((b.year || 0) - (a.year || 0)) || String(a.title || "").localeCompare(String(b.title || ""));
     const byYearAsc = (a, b) => ((a.year || 3000) - (b.year || 3000)) || String(a.title || "").localeCompare(String(b.title || ""));
     const byTitleAsc = (a, b) => String(a.title || "").localeCompare(String(b.title || ""));
@@ -185,7 +236,7 @@ function getPosterUrl(title, year) {
 
 // --- NEW AUTOMATED FETCH FUNCTIONS ---
 // --- UPDATED AUTO FETCH WITH EXTRA DETAILS ---
-// Fetch details using MediaWiki API for richer content
+// Fetch details using MediaWiki API with Smart Search and Validation
 async function fetchDetails(id, title, year, director) {
     const modalContent = document.getElementById('detailsContent');
     if (!modalContent) return;
@@ -199,25 +250,49 @@ async function fetchDetails(id, title, year, director) {
     let wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`;
 
     try {
-        // Use MediaWiki Query API for full Intro (longer than summary)
-        // origin=* is needed for CORS
-        const searchTitle = encodeURIComponent(title);
-        const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro&explaintext&redirects=1&titles=${searchTitle}&origin=*`;
+        // Step 1: Search for the specific film to get the correct Page ID
+        // We include "film" and the year to disambiguate (e.g., "Companion (2025 film)")
+        const limit = 1;
+        const searchQuery = `${title} ${year} film`;
+        const searchApiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&origin=*`;
 
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+        const searchRes = await fetch(searchApiUrl);
+        const searchData = await searchRes.json();
 
-        // Extract page content (keys are dynamic page IDs)
-        const pages = data.query?.pages;
-        if (pages) {
-            const pageIds = Object.keys(pages);
-            if (pageIds.length > 0 && pageIds[0] !== '-1') {
-                const page = pages[pageIds[0]];
-                if (page.extract) {
-                    plot = page.extract; // This is the full intro
+        let targetPageId = null;
+
+        if (searchData.query?.search?.length > 0) {
+            // Pick top result
+            targetPageId = searchData.query.search[0].pageid;
+            wikiUrl = `https://en.wikipedia.org/?curid=${targetPageId}`;
+        }
+
+        // Step 2: Fetch Extract limits
+        if (targetPageId) {
+            // Request ~6-7 sentences to avoid "essay" but give more than "5 lines"
+            // Use exsentences instead of exintro to control length
+            const extractUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exsentences=7&explaintext&pageids=${targetPageId}&format=json&origin=*`;
+            const extractRes = await fetch(extractUrl);
+            const extractData = await extractRes.json();
+
+            if (extractData.query?.pages?.[targetPageId]?.extract) {
+                const bestPlot = extractData.query.pages[targetPageId].extract;
+
+                // VALIDATION: Check if this looks like a movie
+                const lowerPlot = bestPlot.toLowerCase();
+                const isFilm = lowerPlot.includes('directed by') || lowerPlot.includes('film') || lowerPlot.includes('movie') || lowerPlot.includes('starring') || lowerPlot.includes('released');
+
+                // Additional Check: If title is generic (1 word) and no film keywords, likely dictionary
+                const titleWords = title.split(' ').length;
+                const isGenericTitle = titleWords < 2;
+
+                if (isFilm || (!isGenericTitle && lowerPlot.length > 50)) {
+                    plot = bestPlot;
+                } else {
+                    plot = "Specific film details not found on Wikipedia (Result seemed unrelated).";
+                    // Fallback to Wiki search URL so they can find it manually
+                    wikiUrl = `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(title + ' ' + year + ' film')}`;
                 }
-                // Construct real Wiki URL from page info if available, else fallback
-                wikiUrl = `https://en.wikipedia.org/?curid=${page.pageid}`;
             }
         }
 
@@ -372,12 +447,15 @@ function render() {
     });
 
     // Wire Info Buttons
+    // NOTE: Removed previous generic listener because we now use onclick inline for stability
+    /*
     grid.querySelectorAll('.info-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const r = NORM.find(x => x.__id === btn.getAttribute('data-id'));
             if (r) fetchDetails(r.__id, r.title, r.year);
         });
     });
+    */
 }
 
 // UI: Dialogs (Add / Edit / Import)
@@ -398,418 +476,147 @@ function getDialog(id, html) {
 
 // New Auto-Info Dialog
 function initDetailsDialog() {
-    const html = `
-        <div style="position:relative;">
-            <button class="btn-ghost" style="position:absolute;top:0;right:0;padding:4px 8px;" onclick="document.getElementById('detailsDialog').close()">✕</button>
-            <div id="detailsContent"></div>
-        </div>
-    `;
-    getDialog('detailsDialog', html);
+    let dlg = document.getElementById('detailsDialog');
+    if (!dlg) {
+        getDialog('detailsDialog', `
+            <div style="position:relative;">
+                <button class="btn btn-ghost" style="position:absolute;top:0;right:0;padding:4px;" onclick="document.getElementById('detailsDialog').close()">✕</button>
+                <div id="detailsContent"></div>
+            </div>
+        `);
+    }
 }
 // Init immediately
 initDetailsDialog();
 
+async function openEditDialog(id) {
+    const isEdit = !!id;
+    let item = {};
+    if (isEdit) {
+        item = NORM.find(r => r.__id === id) || {};
+    }
 
-function openEditDialog(id) {
-    const row = NORM.find(x => x.__id === id);
-    if (!row) return;
-
-    // --- REMOVED NOTES FIELD ---
     const html = `
-      <form method="dialog" id="editForm">
-        <h3 style="margin:0 0 10px 0;">Edit film</h3>
-        <input type="hidden" name="__id">
-        <div class="form-grid">
-          <div><label>Title<input name="title" required></label></div>
-          <div><label>Original title<input name="original"></label></div>
-          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
-          <div><label>Director(s)<input name="director"></label></div>
-          <div class="full"><label>Letterboxd link<input name="lb"></label></div>
-          <div class="full"><label>Drive link<input name="drive"></label></div>
-          <div class="full"><label>Download link<input name="dl"></label></div>
-        </div>
-        <div class="actions-row">
-          <button value="cancel" class="btn-ghost" type="button">Cancel</button>
-          <button value="default" class="page-btn" type="submit">Save</button>
-        </div>
-      </form>`;
+        <h2>${isEdit ? 'Edit Film' : 'Add New Film'}</h2>
+        <form class="edit-form" onsubmit="event.preventDefault(); saveItem('${id || ''}');">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="inpTitle" value="${escapeHtml(item.title || '')}" required>
+            </div>
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" id="inpYear" value="${item.year || ''}">
+            </div>
+            <div class="form-group">
+                <label>Original Title</label>
+                <input type="text" id="inpOriginal" value="${escapeHtml(item.original || '')}">
+            </div>
+            <div class="form-group">
+                <label>Director</label>
+                <input type="text" id="inpDirector" value="${escapeHtml(item.director || '')}">
+            </div>
+            <!-- Links -->
+            <div class="form-group">
+                <label>Letterboxd URL</label>
+                <input type="url" id="inpLb" value="${item.letterboxd || ''}">
+            </div>
+             <div class="form-group">
+                <label>Google Drive URL</label>
+                <input type="url" id="inpDrive" value="${item.drive || ''}">
+            </div>
+             <div class="form-group">
+                <label>Download URL</label>
+                <input type="url" id="inpDl" value="${item.download || ''}">
+            </div>
+
+            <div class="actions" style="margin-top:20px;justify-content:flex-end;">
+                <button type="button" class="btn btn-ghost" onclick="document.getElementById('editDialog').close()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    `;
 
     const dlg = getDialog('editDialog', html);
-    const f = dlg.querySelector('form');
-
-    // Populate form
-    f.__id.value = id;
-    f.title.value = row.title || '';
-    f.original.value = row.original || '';
-    f.year.value = (row.year != null ? row.year : '');
-    f.director.value = row.director || '';
-    f.lb.value = row.lb || '';
-    f.drive.value = row.drive || '';
-    f.dl.value = row.dl || '';
-
-    // EDIT SUBMIT
-    f.onsubmit = async (e) => {
-        e.preventDefault();
-        const fd = Object.fromEntries(new FormData(f).entries());
-        const pid = fd.__id;
-        if (!pid) return;
-
-        const patch = {
-            title: fd.title || '',
-            original: fd.original || '',
-            year: fd.year ? (parseInt(fd.year, 10) || null) : null,
-            director: fd.director || '',
-            lb: fd.lb || '',
-            drive: fd.drive || '',
-            dl: fd.dl || ''
-        };
-
-        try {
-            const res = await fetch(`/api/movies/${pid}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(patch)
-            });
-            if (!res.ok) throw new Error('Update failed');
-            await fetchData();
-            dlg.close();
-        } catch (err) {
-            alert('Error saving edit: ' + err.message);
-        }
-    };
-
+    // Refresh content
+    dlg.innerHTML = html;
     dlg.showModal();
 }
 
-function openAddDialog() {
-    const html = `
-      <form method="dialog" id="addForm">
-        <h3 style="margin:0 0 10px 0;">Add a film</h3>
-        <div class="form-grid">
-          <div><label>Title<input name="title" required></label></div>
-          <div><label>Original title<input name="original"></label></div>
-          <div><label>Year<input name="year" type="number" inputmode="numeric" min="1860" max="2100"></label></div>
-          <div><label>Director(s)<input name="director"></label></div>
-          <div class="full"><label>Letterboxd link<input name="lb" placeholder="https://boxd.it/..."></label></div>
-          <div class="full"><label>Drive link<input name="drive" placeholder="https://drive.google.com/..."></label></div>
-          <div class="full"><label>Download link<input name="dl" placeholder="Direct download / transfer link"></label></div>
-        </div>
-        <div class="actions-row">
-          <button value="cancel" class="btn-ghost" type="button">Cancel</button>
-          <button value="default" class="page-btn" type="submit">Add</button>
-        </div>
-      </form>`;
-
-    const dlg = getDialog('addDialog', html);
-    const f = dlg.querySelector('form');
-    f.reset();
-
-    f.onsubmit = async (e) => {
-        e.preventDefault();
-        const rec = toNormalized(Object.fromEntries(new FormData(f).entries()));
-        if (!rec.title) { alert('Title is required.'); return; }
-
-        try {
-            const res = await fetch('/api/movies', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(rec)
-            });
-            if (!res.ok) throw new Error('Server error');
-
-            await fetchData();
-            dlg.close();
-        } catch (err) {
-            alert('Failed to add film: ' + err.message);
-        }
+async function saveItem(id) {
+    const payload = {
+        title: document.getElementById('inpTitle').value,
+        year: document.getElementById('inpYear').value,
+        original: document.getElementById('inpOriginal').value,
+        director: document.getElementById('inpDirector').value,
+        letterboxd: document.getElementById('inpLb').value,
+        drive: document.getElementById('inpDrive').value,
+        download: document.getElementById('inpDl').value,
     };
 
-    dlg.showModal();
-}
+    if (id) payload.__id = id;
 
-// ... parseCSV ...
-function parseCSV(text) {
-    const rows = []; let i = 0, f = '', row = [], q = false;
-    while (i < text.length) {
-        const c = text[i];
-        if (q) { if (c == '"') { if (text[i + 1] == '"') { f += '"'; i++; } else q = false; } else f += c; }
-        else {
-            if (c === ',') { row.push(f.trim()); f = ''; }
-            else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f.trim()); f = ''; if (row.length > 1 || row[0] !== '') rows.push(row); row = []; }
-            else if (c === '"') { q = true; } else f += c;
-        }
-        i++;
-    }
-    if (f.length || row.length) { row.push(f.trim()); rows.push(row); }
-    return rows;
-}
-
-function handleCSVUpload() {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.csv,text/csv';
-
-    fileInput.onchange = () => {
-        const f = fileInput.files[0];
-        if (!f) return;
-        const reader = new FileReader();
-        reader.onload = async () => {
-            try {
-                const rows = parseCSV(String(reader.result || ''));
-                if (!rows.length) throw new Error('No rows');
-                const headers = rows[0].map(h => h.trim());
-
-                const imports = [];
-                for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row || row.length === 0) continue;
-                    const obj = {};
-                    headers.forEach((h, idx) => obj[h] = row[idx] ?? '');
-                    const rec = toNormalized(obj);
-                    if (rec.title) imports.push(rec);
-                }
-
-                if (imports.length === 0) throw new Error('No valid films found');
-
-                // Send to Server
-                const res = await fetch('/api/import', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(imports)
-                });
-
-                if (!res.ok) throw new Error('Import failed on server');
-                const result = await res.json();
-
-                let msg = `✅ Import Complete!\nSuccess: ${result.success}`;
-                if (result.failed > 0) {
-                    msg += `\n❌ Failed: ${result.failed}`;
-                    // Show first 5 errors to avoid spam
-                    const topErrors = result.errors.slice(0, 5).join('\n');
-                    msg += `\n\nErrors:\n${topErrors}`;
-                    if (result.errors.length > 5) msg += `\n...and ${result.errors.length - 5} more.`;
-                }
-
-                alert(msg);
-                fetchData();
-            } catch (err) {
-                alert('CSV import failed: ' + err.message);
-            }
-        };
-        reader.readAsText(f);
-    };
-    fileInput.click();
-}
-
-// UI: Filters Helper
-function uniqueValues(key, separator = null) {
-    const set = new Set();
-    for (const r of NORM) {
-        if (r[key]) {
-            if (separator) {
-                r[key].toString().split(separator).forEach(item => { const t = item.trim(); if (t) set.add(t); });
-            } else {
-                set.add(r[key]);
-            }
-        }
-    }
-    return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
-}
-
-function refreshFilters() {
-    const y = document.querySelector('#year');
-    const d = document.querySelector('#director');
-    if (!y || !d) return;
-
-    const currentY = y.value;
-    const currentD = d.value;
-
-    const years = uniqueValues('year').sort((a, b) => b - a);
-    const directors = uniqueValues('director', ',');
-
-    y.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
-    d.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
-
-    const fragY = document.createDocumentFragment();
-    years.forEach(v => { const o = document.createElement('option'); o.value = String(v); o.textContent = String(v); fragY.appendChild(o); });
-    y.appendChild(fragY);
-
-    const fragD = document.createDocumentFragment();
-    directors.forEach(v => { const o = document.createElement('option'); o.value = String(v); o.textContent = String(v); fragD.appendChild(o); });
-    d.appendChild(fragD);
-
-    y.value = currentY;
-    if (y.value !== currentY) y.value = 'all';
-
-    d.value = currentD;
-    if (d.value !== currentD) d.value = 'all';
-}
-
-// Helper for UI clicks
-window.filterByYear = function (year) {
-    const ySel = document.getElementById('year');
-    if (ySel) {
-        ySel.value = year;
-        // Trigger change event to update state and render
-        ySel.dispatchEvent(new Event('change'));
-        // Scroll to filters
-        ySel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-};
-
-// Initialization & Event Binding
-function init() {
-    // Load Prefs
+    // Call API
     try {
-        const saved = JSON.parse(localStorage.getItem(PREFS_KEY));
-        if (saved) state = { ...state, ...saved };
-    } catch { }
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? '/api/movies/' + id : '/api/movies';
 
-    // Init UI Elements from state
-    const q = document.getElementById('q');
-    if (q) q.value = state.q;
-
-    const y = document.getElementById('year');
-    const d = document.getElementById('director');
-    const f = document.getElementById('filter');
-    const s = document.getElementById('sort'); // Sort Element
-    const themeBtn = document.getElementById('themeBtn');
-    const compactBtn = document.getElementById('compactBtn');
-
-    if (f) f.value = state.filter;
-    if (s) s.value = state.sort; // Init Sort Value
-
-    refreshFilters(); // Populate dropdowns
-    if (y) y.value = state.year;
-    if (d) d.value = state.director;
-
-    // Theme Logic
-    const savedTheme = localStorage.getItem('film_theme_neo') || 'dark';
-    document.documentElement.dataset.theme = savedTheme;
-    if (themeBtn) {
-        themeBtn.innerHTML = savedTheme === 'dark' ? ICONS.themeDark : ICONS.themeLight;
-        themeBtn.onclick = () => {
-            const cur = document.documentElement.dataset.theme;
-            const next = cur === 'dark' ? 'light' : 'dark';
-            document.documentElement.dataset.theme = next;
-            localStorage.setItem('film_theme_neo', next);
-            themeBtn.innerHTML = next === 'dark' ? ICONS.themeDark : ICONS.themeLight;
-        };
-    }
-
-    // Compact Logic (Reuse)
-    if (state.compact) document.body.classList.add('compact');
-    if (compactBtn) {
-        compactBtn.innerHTML = state.compact ? ICONS.densityCompact : ICONS.densityComfort;
-        compactBtn.onclick = () => {
-            state.compact = !state.compact;
-            document.body.classList.toggle('compact', state.compact);
-            compactBtn.innerHTML = state.compact ? ICONS.densityCompact : ICONS.densityComfort;
-            save(PREFS_KEY, state);
-        };
-    }
-
-    // Global Event Listeners
-    if (q) q.addEventListener('input', e => { state.q = e.target.value; state.page = 1; save(PREFS_KEY, state); render(); });
-
-    // Event Listeners for Filters
-    [y, d, f].forEach(el => {
-        if (el) el.addEventListener('change', e => {
-            state[el.id] = e.target.value;
-            state.page = 1;
-            save(PREFS_KEY, state);
-            render();
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
-    });
 
-    // Pagination Logic (Dual Controls)
-    const handlePageChange = (delta) => {
-        state.page += delta;
-        if (state.page < 1) state.page = 1;
-
-        render();
-        document.getElementById('scrollTopBtn').click();
-    };
-
-    // Global Prev/Next (Top)
-    const topPrev = document.getElementById('prev');
-    const topNext = document.getElementById('next');
-    if (topPrev) topPrev.onclick = () => handlePageChange(-1);
-    if (topNext) topNext.onclick = () => handlePageChange(1);
-
-    // Bottom Pagination Injection
-    const bottomContainer = document.getElementById('paginationBottom');
-    if (bottomContainer) {
-        bottomContainer.innerHTML = `
-            <button class="page-btn prev-btn">Prev</button>
-            <span class="counter page-info" style="margin:0 10px;"></span>
-            <button class="page-btn next-btn">Next</button>
-        `;
-        bottomContainer.querySelector('.prev-btn').onclick = () => handlePageChange(-1);
-        bottomContainer.querySelector('.next-btn').onclick = () => handlePageChange(1);
-    }
-
-    // Scroll to Top
-    const scrollBtn = document.getElementById('scrollTopBtn');
-    window.onscroll = () => {
-        if (window.scrollY > 300) scrollBtn.classList.add('visible');
-        else scrollBtn.classList.remove('visible');
-    };
-    scrollBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Install Import/Add Buttons (Top)
-    const toolbar = document.querySelector('.toolbar');
-    if (toolbar) {
-        const right = toolbar.querySelector('.pagination');
-        if (right) {
-            const btnAdd = document.createElement('button');
-            btnAdd.className = 'page-btn';
-            btnAdd.textContent = '+ Film';
-            btnAdd.onclick = openAddDialog;
-
-            const btnCSV = document.createElement('button');
-            btnCSV.className = 'page-btn';
-            btnCSV.textContent = 'CSV';
-            btnCSV.onclick = handleCSVUpload;
-
-            // Insert before pagination
-            right.parentNode.insertBefore(btnAdd, right);
-            right.parentNode.insertBefore(btnCSV, right);
+        if (res.ok) {
+            document.getElementById('editDialog').close();
+            fetchData(); // Reload
+        } else {
+            alert('Failed to save');
         }
+    } catch (e) {
+        console.error(e);
+        alert('Error saving');
     }
+}
 
-    // Initial Render
+// CSV
+function processCSV() {
+    const txt = document.getElementById('csvInput').value;
+    if (!txt.trim()) return;
+
+    // Very simple CSV parser for demo
+    // Expected: Title;Original;Year;Director;Letterboxd;Drive;Download
+    // Replacing simple split with something slightly robust or just sending raw text to server?
+    // Let's send raw text to server to parse
+    fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csv: txt })
+    }).then(res => res.json()).then(d => {
+        alert(`Imported ${d.count} items.`);
+        document.getElementById('csvDialog').close();
+        fetchData();
+    }).catch(e => alert('Import failed ' + e));
+}
+
+function filterByYear(y) {
+    if (!y) return;
+    state.filter = { type: 'year', val: parseInt(y) };
+    state.page = 1;
+    // visual update
+    document.querySelector('#yearFilter').value = y;
     render();
 }
 
-// Lock Screen Logic
-function initLockScreen() {
-    const lockScreen = document.getElementById('lockScreen');
-    const lockInput = document.getElementById('lockInput');
-    const lockBtn = document.getElementById('lockBtn');
-
-    if (!lockScreen || !lockInput || !lockBtn) return;
-
-    const checkPassword = () => {
-        const val = lockInput.value;
-        if (val === '2025') {
-            lockScreen.classList.add('hidden');
-            sessionStorage.setItem('isUnlocked', 'true');
-            lockInput.value = '';
-        } else {
-            // Wrong password -> Redirect
-            window.location.href = "https://youtu.be/dQw4w9WgXcQ?si=F4BZ7mvryQUf6nmb";
-        }
-    };
-
-    lockBtn.addEventListener('click', checkPassword);
-    lockInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkPassword();
-    });
+// Utils
+function fmt(s) {
+    return s || '';
 }
-
-// Start
-document.addEventListener('DOMContentLoaded', () => {
-    initLockScreen();
-    fetchData();
-});
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
