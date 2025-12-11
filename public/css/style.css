@@ -694,6 +694,12 @@ dialog.dialog-modal::backdrop {
 
 /* --- Mobile Optimization --- */
 @media (max-width: 768px) {
+  header {
+    position: relative;
+    /* Disable sticky on mobile */
+    top: auto;
+  }
+
   .container {
     padding: 0 20px;
     /* Safe padding for mobile */
