@@ -92,9 +92,11 @@ async function fetchData() {
 
         // Initial setup
         init();
+        document.getElementById('app-loader').classList.add('hidden');
     } catch (error) {
         console.error('Failed to fetch data:', error);
         document.getElementById('grid').innerHTML = `<div class="empty">Error loading data. Please try again.</div>`;
+        document.getElementById('app-loader').classList.add('hidden');
     }
 }
 
@@ -230,11 +232,19 @@ async function fetchDetails(id, title, year) {
                 </div>
             </div>
 
-            <div style="margin: 20px 0; display:flex; gap:10px; flex-wrap:wrap;">
-                <a class="btn" href="${googleUrl}" target="_blank" style="background:#4285F4;color:#fff;">Google</a>
-                <a class="btn" href="${imdbUrl}" target="_blank" style="background:#F5C518;color:#000;">IMDb</a>
-                <a class="btn" href="${lbUrl}" target="_blank" style="background:#00D735;color:#000;">Letterboxd</a>
-                <a class="btn" href="${wikiUrl}" target="_blank" style="background:#fff;color:#000;">Wikipedia</a>
+            <div style="margin: 20px 0; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+                <a class="glossy-box social-link google" href="${googleUrl}" target="_blank">
+                     Google
+                </a>
+                <a class="glossy-box social-link imdb" href="${imdbUrl}" target="_blank">
+                     IMDb
+                </a>
+                <a class="glossy-box social-link letterboxd" href="${lbUrl}" target="_blank">
+                     Letterboxd
+                </a>
+                <a class="glossy-box social-link wiki" href="${wikiUrl}" target="_blank">
+                     Wikipedia
+                </a>
             </div>
 
             <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
