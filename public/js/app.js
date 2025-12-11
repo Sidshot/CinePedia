@@ -358,7 +358,7 @@ function render() {
             <div class="meta">${metaHtml}</div>
             <div class="actions">${lbBtn}${drBtn}${dlBtn}</div>
             
-            <button class="btn info-btn" style="margin-top:10px;width:100%;justify-content:center;" data-id="${r.__id}">
+            <button class="btn info-btn" style="margin-top:10px;width:100%;justify-content:center;" onclick="fetchDetails('${r.id}', '${escapeHtml(r.title)}', '${r.year}', '${escapeHtml(r.director || '')}')">
                 ${ICONS.info} Movie Details
             </button>
         `;
