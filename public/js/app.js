@@ -625,7 +625,8 @@ async function fetchDetails(id) {
             </div>
             <div style="margin: 20px 0;">
                 <strong>Wikipedia Intro:</strong>
-                <div class="spoiler-box" style="margin-top:8px; padding:16px; background:rgba(0,0,0,0.2); border-radius:8px;">
+                <div class="spoiler-box" onclick="this.classList.toggle('revealed')" title="Click to Reveal">
+                    <small class="spoiler-warning">⚠️ Tap to Reveal Spoiler</small>
                     <div class="spoiler-content" style="line-height:1.6; font-size:0.95rem; white-space: pre-wrap;">${escapeHtml(plot)}</div>
                 </div>
             </div>
