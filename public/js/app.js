@@ -24,6 +24,12 @@ const ICONS = {
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
+    // Hide loader initially (it will be shown by fetchData after unlock)
+    const loader = document.getElementById('app-loader');
+    if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+    }
+
     initLockScreen();
     setupListeners();
 });
