@@ -1,4 +1,4 @@
-require('dotenv').config();
+const config = require('./config');
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -6,7 +6,7 @@ const mongoose = require('mongoose'); // Database
 const Movie = require('./models/Movie'); // Model
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 // Middleware
 app.use(cors());
@@ -16,12 +16,12 @@ app.use(express.json({ limit: '10mb' }));
 // Database Connection
 const fs = require('fs');
 const connectDB = async () => {
-    if (!process.env.MONGO_URI) {
+    if (!config.MONGO_URI) {
         console.log('⚠️ No MONGO_URI found. Server will start but DB calls will fail.');
         return;
     }
     try {
-        await mongoose.connect(process.env.MONGO_URI);
+        await mongoose.connect(config.MONGO_URI);
         console.log('✅ MongoDB Connected');
 
         // AUTO-SEED: Check if empty
@@ -85,13 +85,21 @@ function generateId(film) {
     return `fm_${hash}_${Date.now().toString(36)}`;
 }
 
-// API Routes
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin'; // Default fallback
+// Middleware: Require Admin
+const requireAdmin = (req, res, next) => {
+    const pass = req.headers['x-admin-pass'] || req.body.password;
+    if (pass === config.ADMIN_PASS) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Forbidden: Admin Access Required' });
+    }
+};
 
+// API Routes
 // POST /api/auth - Password Check
 app.post('/api/auth', (req, res) => {
     const { password } = req.body;
-    if (password === ADMIN_PASSWORD) {
+    if (password === config.ADMIN_PASS) {
         return res.json({ success: true });
     }
     return res.json({ success: false });
@@ -140,7 +148,7 @@ app.put('/api/movies/:id', async (req, res) => {
 });
 
 // POST /api/import - Bulk Import
-app.post('/api/import', async (req, res) => {
+app.post('/api/import', requireAdmin, async (req, res) => {
     try {
         let imports = req.body;
 

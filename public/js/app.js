@@ -625,6 +625,3 @@ const NA = '<span class="na">N/A</span>';
 const fmt = (s) => s || '';
 
 
-// Finish file content
-
-
