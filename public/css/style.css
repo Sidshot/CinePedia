@@ -182,21 +182,28 @@ header {
 
 
 .controls-wrapper {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   justify-content: center;
-  /* Center grid items if they don't fill width */
-  text-align: center;
 }
 
 .control-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  min-width: 0;
-  /* Prevent grid blowout */
+  /* Allow natural width but grow if needed */
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+
+/* Force Search to break to its own line and take full width */
+.control-group.full-width {
+  flex-basis: 100%;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .visually-hidden {
@@ -216,7 +223,8 @@ input,
 .control-group input,
 .control-group select,
 .control-group button,
-.control-group .custom-toggle {
+.control-group .custom-toggle,
+.control-group .btn-icon {
   height: 42px;
   /* Fixed height for alignment */
   padding: 0 14px;

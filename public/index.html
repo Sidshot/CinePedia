@@ -85,9 +85,9 @@
 
     <div class="controls-wrapper">
       <!-- Search -->
-      <div class="control-group" style="grid-column: 1 / -1; display:flex; justify-content:center;">
+      <div class="control-group full-width" style="display:flex; justify-content:center;">
         <label for="q" class="visually-hidden">Search</label>
-        <input id="q" type="search" placeholder="Search title / original title / director…" style="max-width:600px;">
+        <input id="q" type="search" placeholder="Search title / original title / director…" style="max-width:100%;">
       </div>
 
       <!-- Year Filter -->
@@ -142,6 +142,7 @@
             style="font-size:0.9rem;font-weight:600;cursor:pointer;margin:0;color:var(--fg);">Comfort</label>
         </div>
         <button id="compactBtn" class="btn-ghost" aria-label="Toggle compact view"></button>
+        <button id="resetBtn" class="btn-ghost" aria-label="Reset Filters" title="Reset all sorting & filters"></button>
         <!-- Admin Tools -->
         <button class="add-btn btn-ghost admin-only hidden" aria-label="Add Film">+ Add</button>
         <button class="csv-btn btn-ghost admin-only hidden" aria-label="Import CSV">Import</button>
