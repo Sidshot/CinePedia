@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initLockScreen();
     setupListeners();
+    initDetailsDialog(); // Ensure modal exists
 });
 
 // 0. Lock Screen
@@ -383,7 +384,7 @@ function render() {
         const drBtn = r.drive ? `<a class="btn drive" href="${r.drive}" target="_blank">${ICONS.drive} Drive</a>` : '';
         const dlBtn = r.dl ? `<a class="btn download" href="${r.dl}" target="_blank">${ICONS.download} Download</a>` : '';
 
-        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r.__id}', '${escapeHtml(t)}', '${r.year}', '${escapeHtml(r.director)}')" title="View Plot">
+        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r.__id}')" title="View Plot">
             ${ICONS.info} Plot of film
         </button>`;
 
@@ -556,19 +557,26 @@ function processCSV() {
     }).catch(e => alert('Import failed ' + e));
 }
 
-// New FetchDetails from wiki (Copied from previous file but updated needed?)
-async function fetchDetails(id, title, year, director) {
+// New FetchDetails from wiki
+async function fetchDetails(id) {
+    const film = NORM.find(f => f.__id === id);
+    if (!film) return;
+
+    const { title, year, director, lb, drive, dl } = film;
+
     const modalContent = document.getElementById('detailsContent');
     if (!modalContent) return;
+
     modalContent.innerHTML = '<div style="text-align:center;padding:40px;">Fetching info from the cosmos... 🪐</div>';
     const dlg = document.getElementById('detailsDialog');
     if (dlg) dlg.showModal();
 
     let plot = 'No specific plot details found on Wikipedia.';
+    // Use raw title for search, but formatted for wiki URL
     let wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`;
 
     try {
-        const searchQuery = `${title} ${year} film`;
+        const searchQuery = `${title} ${year || ''} film`;
         const searchApiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&origin=*`;
         const searchRes = await fetch(searchApiUrl);
         const searchData = await searchRes.json();
@@ -586,8 +594,9 @@ async function fetchDetails(id, title, year, director) {
 
             if (extractData.query?.pages?.[targetPageId]?.extract) {
                 const bestPlot = extractData.query.pages[targetPageId].extract;
+                // Simple relevance check
                 const lowerPlot = bestPlot.toLowerCase();
-                const isFilm = ['directed by', 'film', 'movie', 'starring', 'released'].some(k => lowerPlot.includes(k));
+                const isFilm = ['directed by', 'film', 'movie', 'starring', 'released', 'plot', 'story'].some(k => lowerPlot.includes(k));
                 if (isFilm || bestPlot.length > 50) {
                     plot = bestPlot;
                 }
@@ -595,27 +604,38 @@ async function fetchDetails(id, title, year, director) {
         }
     } catch (e) { console.warn(e); }
 
-    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + year + ' film')}`;
-    const imdbUrl = `https://www.imdb.com/find?q=${encodeURIComponent(title + ' ' + year)}`;
-    const lbUrl = `https://letterboxd.com/search/${encodeURIComponent(title + ' ' + year)}`;
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(title + ' ' + (year || '') + ' film')}`;
+    const imdbUrl = `https://www.imdb.com/find?q=${encodeURIComponent(title + ' ' + (year || ''))}`;
+
+    // Logic: Use provided LB/Drive/DL links if they exist, else fallbacks or hide.
+    const lbLink = lb || `https://letterboxd.com/search/${encodeURIComponent(title + ' ' + (year || ''))}`;
+
+    // Generate Tiles
+    const lbTile = `<a class="glossy-box social-link letterboxd" href="${lbLink}" target="_blank">Letterboxd</a>`;
+    const driveTile = drive ? `<a class="glossy-box social-link drive" href="${drive}" target="_blank">${ICONS.drive} Drive</a>` : '';
+    const dlTile = dl ? `<a class="glossy-box social-link download" href="${dl}" target="_blank">${ICONS.download} Download</a>` : '';
+
+    // Always show Google/IMDb/Wiki/LB. Show Drive/DL only if available.
 
     modalContent.innerHTML = `
         <div style="text-align:left;">
             <h2 style="margin-top:0; font-family:'Dancing Script', cursive; font-size:2rem; margin-bottom:4px;">${escapeHtml(title)}</h2>
             <div style="font-size:0.9rem; opacity:0.7; margin-bottom:16px;">
-                <span>${year || 'N/A'}</span> • <span>${director || 'Director Unknown'}</span>
+                <span>${year || 'N/A'}</span> • <span>${escapeHtml(director) || 'Director Unknown'}</span>
             </div>
             <div style="margin: 20px 0;">
                 <strong>Wikipedia Intro:</strong>
                 <div class="spoiler-box" style="margin-top:8px; padding:16px; background:rgba(0,0,0,0.2); border-radius:8px;">
-                    <div class="spoiler-content" style="line-height:1.6; font-size:0.95rem; white-space: pre-wrap;">${plot}</div>
+                    <div class="spoiler-content" style="line-height:1.6; font-size:0.95rem; white-space: pre-wrap;">${escapeHtml(plot)}</div>
                 </div>
             </div>
             <div style="margin: 20px 0; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
                 <a class="glossy-box social-link google" href="${googleUrl}" target="_blank">Google</a>
                 <a class="glossy-box social-link imdb" href="${imdbUrl}" target="_blank">IMDb</a>
-                <a class="glossy-box social-link letterboxd" href="${lbUrl}" target="_blank">Letterboxd</a>
+                ${lbTile}
                 <a class="glossy-box social-link wiki" href="${wikiUrl}" target="_blank">Wikipedia</a>
+                ${driveTile}
+                ${dlTile}
             </div>
         </div>
     `;
@@ -623,5 +643,11 @@ async function fetchDetails(id, title, year, director) {
 
 const NA = '<span class="na">N/A</span>';
 const fmt = (s) => s || '';
+
+// Expose functions to window for HTML access
+window.fetchDetails = fetchDetails;
+window.filterByYear = (y) => { state.filter = { type: 'year', val: parseInt(y) }; state.page = 1; document.querySelector('#yearFilter').value = y; render(); };
+window.filterByDir = (d) => { state.filter = { type: 'director', val: d }; state.page = 1; document.querySelector('#dirFilter').value = d; render(); };
+window.openEditDialog = openEditDialog;
 
 
