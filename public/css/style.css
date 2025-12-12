@@ -9,6 +9,8 @@
   --accent2: #FF8A3D;
   --glass: blur(20px) saturate(160%);
   --radius: 20px;
+  --bg-gradient: radial-gradient(1000px 800px at 0% 0%, rgba(255, 192, 67, 0.12), transparent 45%),
+    radial-gradient(1000px 800px at 100% 0%, rgba(255, 138, 61, 0.12), transparent 45%);
 }
 
 :root[data-theme="light"] {
@@ -20,6 +22,8 @@
   --border: rgba(255, 255, 255, 0.4);
   --accent: #FFB703;
   --accent2: #FB8500;
+  --bg-gradient: radial-gradient(1000px 800px at 0% 0%, rgba(255, 183, 3, 0.15), transparent 45%),
+    radial-gradient(1000px 800px at 100% 0%, rgba(251, 133, 0, 0.15), transparent 45%);
 }
 
 * {
@@ -38,10 +42,7 @@ body {
   font-family: 'Inter', ui-sans-serif, system-ui, Segoe UI, Roboto, Arial;
   color: var(--fg);
   /* Fixed Glossy Background */
-  background:
-    radial-gradient(1000px 800px at 0% 0%, rgba(255, 192, 67, 0.12), transparent 45%),
-    radial-gradient(1000px 800px at 100% 0%, rgba(255, 138, 61, 0.12), transparent 45%),
-    var(--bg);
+  background: var(--bg-gradient), var(--bg);
   background-attachment: fixed;
   background-attachment: fixed;
   transition: background-color .3s ease, color .3s ease;
@@ -295,6 +296,11 @@ select option {
 
 .compact .grid {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+body.comfort-mode .grid {
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  /* Force ~3 columns */
 }
 
 /* Glossy iOS Cards */
@@ -651,6 +657,53 @@ footer {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(16px);
   /* double blur */
+}
+
+/* Auth Selection Tiles */
+.auth-tiles {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.auth-tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.auth-tile:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-5px) scale(1.05);
+  border-color: var(--accent);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.auth-emoji {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+}
+
+.auth-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.hidden {
+  display: none !important;
 }
 
 .lock-title {

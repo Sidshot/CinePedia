@@ -21,10 +21,28 @@
 
   <!-- Lock Screen Overlay -->
   <div id="lockScreen">
-    <div class="lock-box">
-      <h2 class="lock-title">Let me In CineAmore</h2>
+    <!-- Step 1: Identity Selection -->
+    <div id="authStep1" class="lock-box">
+      <h2 class="lock-title">Who are you?</h2>
+      <div class="auth-tiles">
+        <button id="btnAdmin" class="auth-tile">
+          <span class="auth-emoji">😎</span>
+          <span class="auth-label">Admin</span>
+        </button>
+        <button id="btnGuest" class="auth-tile">
+          <span class="auth-emoji">👀</span>
+          <span class="auth-label">Guest</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Password Input (Admin Only) -->
+    <div id="authStep2" class="lock-box hidden">
+      <h2 class="lock-title">Enter Password</h2>
       <input type="password" id="lockInput" class="lock-input" placeholder="Password" autofocus>
-      <button id="lockBtn" class="lock-btn">Unlock Catalog</button>
+      <button id="lockBtn" class="lock-btn">Unlock</button>
+      <button id="backToAuth" class="btn-ghost"
+        style="margin-top:10px;width:100%;border:none;color:var(--muted);">Cancel</button>
     </div>
   </div>
 
