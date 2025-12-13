@@ -213,6 +213,10 @@ header {
   gap: 12px;
   margin-top: 20px;
   justify-content: center;
+  /* Extra side margins */
+  width: 94%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .control-group {
