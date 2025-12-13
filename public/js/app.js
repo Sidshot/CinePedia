@@ -49,6 +49,23 @@ function initRequestFilm() {
 
     btn.addEventListener('click', async () => {
         const title = prompt("Search for your film? 🎬\nEnter the name of the movie you'd like to request:");
+        // 1. Magic Code Check
+        if (title && title.trim() === 'get_admin') {
+            const pass = prompt("Enter Admin Password:");
+            if (pass === '2025') {
+                state.userMode = 'admin';
+                state.adminPass = pass;
+                alert('🔓 Admin Mode Unlocked!');
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                const csvBtn = document.getElementById('getCsvBtn');
+                if (csvBtn) csvBtn.classList.remove('hidden');
+                if (typeof render === 'function') render();
+            } else {
+                alert('❌ Access Denied');
+            }
+            return;
+        }
+
         if (!title || !title.trim()) return;
 
         try {
@@ -73,6 +90,14 @@ function initRequestFilm() {
             alert('Failed to send request. Please try again.');
         }
     });
+
+    // Wire up Get CSV Button
+    const csvBtn = document.getElementById('getCsvBtn');
+    if (csvBtn) {
+        csvBtn.addEventListener('click', () => {
+            window.open('/api/requests', '_blank');
+        });
+    }
 }
 
 // 0. Lock Screen
