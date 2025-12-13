@@ -5,10 +5,24 @@ const cors = require('cors');
 const mongoose = require('mongoose'); // Database
 const Movie = require('./models/Movie'); // Model
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = config.PORT;
 
 // Middleware
+app.use(helmet({
+    contentSecurityPolicy: false, // relaxed for images/scripts
+}));
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per IP
+    message: 'Too many requests, please try again later.'
+});
+app.use(limiter);
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
