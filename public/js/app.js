@@ -564,7 +564,8 @@ function render() {
         const yr = r.year || NA;
 
         // --- Edit Button (Admin Only) ---
-        const editBtn = isAdmin ? `<button class="edit-btn" onclick="openEditDialog('${r.__id}')">${ICONS.edit} Edit</button>` : '';
+        // V2 MIGRATION: Use _id (ObjectId) strictly
+        const editBtn = isAdmin ? `<button class="edit-btn" onclick="openEditDialog('${r._id}')">${ICONS.edit} Edit</button>` : '';
 
         // Poster
         const posterUrl = getPosterUrl(r.title, r.year);
@@ -577,7 +578,7 @@ function render() {
         const metaHtml = `
             <span class="kv"><span class="label">Original:</span> ${r.original ? escapeHtml(r.original) : NA}</span>
             <span class="kv"><span class="label">Director:</span> ${r.director ? `<a href="#" onclick="event.stopPropagation();filterByDir('${escapeHtml(r.director)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted;">${highlight(r.director, state.q)}</a>` : NA}</span>
-            ${renderRating(r.__id, r.ratingSum, r.ratingCount)}`;
+            ${renderRating(r._id, r.ratingSum, r.ratingCount)}`;
 
         // Buttons
         // --- Download Logic (Glossy Dropdown) ---
@@ -610,7 +611,7 @@ function render() {
         // Letterboxd
         const lbBtn = r.lb ? `<a class="btn letter" href="${r.lb}" target="_blank" onclick="event.stopPropagation()">${ICONS.letterboxd} Letterboxd</a>` : '';
 
-        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r.__id}')" title="View Plot">
+        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r._id}')" title="View Plot">
             ${ICONS.info} Info
         </button>`;
 
@@ -691,10 +692,10 @@ async function saveItem(id) {
         original: document.getElementById('inpOriginal').value,
         director: document.getElementById('inpDirector').value,
         letterboxd: document.getElementById('inpLb').value,
-        drive: document.getElementById('inpDrive').value,
         download: document.getElementById('inpDl').value,
     };
-    if (id) payload.__id = id;
+    // V2 MIGRATION: Do NOT send __id in body. The URL determines the document.
+    // if (id) payload.__id = id;
 
     try {
         const method = id ? 'PUT' : 'POST';
@@ -751,7 +752,7 @@ async function openEditDialog(id) {
     if (state.userMode !== 'admin') return; // Double check
     const isEdit = !!id;
     let item = {};
-    if (isEdit) item = NORM.find(r => r.__id === id) || {};
+    if (isEdit) item = NORM.find(r => r._id === id || r.__id === id) || {};
 
     const html = `
         <h2>${isEdit ? 'Edit Film' : 'Add New Film'}</h2>
@@ -790,7 +791,8 @@ function processCSV() {
 
 // New FetchDetails from wiki
 async function fetchDetails(id) {
-    const film = NORM.find(f => f.__id === id);
+    // V2 MIGRATION: Support both
+    const film = NORM.find(f => f._id === id || f.__id === id);
     if (!film) return;
 
     const { title, year, director, lb, drive, dl } = film;
@@ -935,7 +937,8 @@ async function rateFilm(id, val) {
 
         if (data.success) {
             // Update Local Data Store
-            const film = NORM.find(f => f.__id === id);
+            // V2 MIGRATION: Support both
+            const film = NORM.find(f => f._id === id || f.__id === id);
             if (film) {
                 film.ratingSum = data.ratingSum;
                 film.ratingCount = data.ratingCount;
@@ -1195,7 +1198,7 @@ function renderHero() {
                 <span>${escapeHtml(rand.director || 'Unknown Director')}</span>
             </div>
             <div class="hero-actions">
-                <button class="hero-btn primary" onclick="fetchDetails('${rand.__id}')">
+                <button class="hero-btn primary" onclick="fetchDetails('${rand._id}')">
                     <svg class="ui-icon" style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg>
                     View Details
                 </button>

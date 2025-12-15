@@ -195,12 +195,20 @@ app.put('/api/movies/:id', requireAdmin, async (req, res) => {
         const { id } = req.params;
         const update = req.body;
 
-        const updated = await Movie.findOneAndUpdate({ __id: id }, update, { new: true });
+        let query;
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            query = { _id: id };
+        } else {
+            query = { __id: id };
+        }
+
+        const updated = await Movie.findOneAndUpdate(query, update, { new: true });
 
         if (!updated) return res.status(404).json({ error: 'Not found' });
 
         res.json({ success: true, film: updated });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Failed to update' });
     }
 });
@@ -216,8 +224,17 @@ app.post('/api/movies/:id/rate', async (req, res) => {
         }
 
         // Atomic update
+        let query;
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            console.log(`[DEBUG] Updating by ObjectId: ${id}`);
+            query = { _id: id };
+        } else {
+            console.log(`[DEBUG] Updating by Legacy __id: ${id}`);
+            query = { __id: id };
+        }
+
         const updated = await Movie.findOneAndUpdate(
-            { __id: id },
+            query,
             {
                 $inc: { ratingSum: value, ratingCount: 1 }
             },

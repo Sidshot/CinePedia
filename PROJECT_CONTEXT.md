@@ -14,27 +14,24 @@ Live site: https://cineamore-ikz7.onrender.com/
 - No gamification or popularity bias
 - Performance and simplicity prioritized
 
-## Architecture
-- **Backend:** Node.js, Express
-- **Database:** MongoDB
-- **Frontend:** Vanilla JS + DOM + CSS
-- **No front frameworks** (React/Vue) in UI
+## Architecture (Legacy V1 -> V2 Migration)
+- **Current (V1):** Node.js, Express, Vanilla JS, JSON/MongoDB.
+- **Target (V2):** Next.js (App Router), Tailwind CSS, MongoDB Atlas.
+- **Migration Strategy:**
+  1.  Harden V1 DB (Immutable IDs).
+  2.  Parallel Build of V2 (Next.js) in `cineamore-next`.
+  3.  Switch Deployment when V2 reaches parity.
 
 ## Workflow Rules
 - **Preserve custom identifiers:**  
-  Do NOT replace or refactor the custom string `__id` logic that front end uses for routing/state.  
+  Transitioning to `_id` (ObjectId) as primary key. `slug` (Title+Year) becomes secondary for URLs only.
 - Authentication:
-  - Guest vs Admin modes
-  - Admin actions protected via password
+  - Moving to JWT / NextAuth.
 - UI:
-  - Filters, sorts, export, import CSV
-  - Film list pagination
-  - Bulk import via CSV
+  - Moving to React/Tailwind Components.
   - **Updates Tab:** maintained manually in `app.js` (marketing style, not technical).
-- Minimal UI palette and layout — avoid flashy/redesigns by default
 
-## Explicit Non-Goals
-- No recommendations engine
-- No comments/reviews
-- No social features
-- No client frameworks
+## Explicit Non-Goals (Revised)
+- *Legacy:* No recommendations engine -> *Revised:* AI "Vibe Search" (Phase 3).
+- *Legacy:* No client frameworks -> *Revised:* Next.js for SSR/SEO.
+- **Still Restricted:** No "Social Media" clutter (likes/comments focus on film appreciation, not noise).
