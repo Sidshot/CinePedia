@@ -7,11 +7,16 @@ const MovieSchema = new mongoose.Schema({
     year: Number,
     director: String,
     lb: String,    // Letterboxd Link
-    drive: String, // Drive Link
-    dl: String,    // Download Link
     notes: String,
     ratingSum: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    downloadLinks: [{
+        label: String, // e.g. "Option 1" or "Drive"
+        url: String,
+        addedAt: { type: Date, default: Date.now }
+    }],
+    dl: String,   // Deprecated, keeping for safety
+    drive: String, // Deprecated, keeping for safety
     addedAt: { type: Date, default: Date.now }
 });
 

@@ -151,21 +151,9 @@
 }
 
 .tips-progress.animate {
-    transition: transform 10s linear;
-    /* Matches 10s timeout */
     transform: scaleX(1);
+    transition: transform 10s linear;
 }
 
-@media (prefers-color-scheme: dark) {
-    .tips-btn {
-        color: #aaa;
-    }
 
-    .tips-btn:hover {
-        color: #fff;
-    }
-
-    .tips-btn.primary {
-        color: #a3b8ff;
-    }
 }

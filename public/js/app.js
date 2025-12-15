@@ -41,7 +41,105 @@ document.addEventListener('DOMContentLoaded', () => {
     setupListeners();
     initDetailsDialog(); // Ensure modal exists
     initRequestFilm(); // Request Feature
+    initReportFeature(); // Report Feature
 });
+
+// --- Report Feature ---
+function initReportFeature() {
+    const reportBtn = document.getElementById('reportBtn');
+    const modal = document.getElementById('reportModal');
+    const closeBtn = document.getElementById('closeReportBtn');
+    const submitBtn = document.getElementById('submitReportBtn');
+    const inpName = document.getElementById('reportName');
+    const inpMsg = document.getElementById('reportMsg');
+
+    if (reportBtn && modal) {
+        console.log('Report Feature Initialized'); // Debug
+        // Open
+        reportBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent bubbling
+            console.log('Report Button Clicked'); // Debug
+
+            modal.classList.remove('hidden');
+            // Force reflow for transition
+            requestAnimationFrame(() => {
+                modal.classList.add('active');
+            });
+
+            if (inpName) inpName.value = '';
+            if (inpMsg) inpMsg.value = '';
+            // Delay focus slightly to ensure visibility
+            setTimeout(() => { if (inpMsg) inpMsg.focus(); }, 50);
+        });
+
+        // Close functions
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300); // match css transition
+        };
+
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+        // Click outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Submit
+        if (submitBtn) {
+            submitBtn.addEventListener('click', async () => {
+                const name = inpName.value.trim();
+                const message = inpMsg.value.trim();
+
+                if (!message) {
+                    alert("Please enter a message!");
+                    return;
+                }
+
+                // UI Feedback
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "Sending... ⏳";
+                submitBtn.disabled = true;
+
+                try {
+                    const res = await fetch('/api/report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, message })
+                    });
+
+                    if (res.ok) {
+                        submitBtn.innerText = "Sent! ✅";
+                        setTimeout(() => {
+                            closeModal();
+                            submitBtn.innerText = originalText;
+                            submitBtn.disabled = false;
+                        }, 1000);
+                    } else {
+                        throw new Error("Failed");
+                    }
+                } catch (e) {
+                    alert("❌ Failed to send report. Check console.");
+                    console.error(e);
+                    submitBtn.innerText = "Error ❌";
+                    setTimeout(() => {
+                        submitBtn.innerText = originalText;
+                        submitBtn.disabled = false;
+                    }, 2000);
+                }
+            });
+        }
+    }
+
+    // Admin Get Reports Button
+    const getReportsBtn = document.getElementById('getReportsBtn');
+    if (getReportsBtn) {
+        getReportsBtn.addEventListener('click', () => {
+            window.location.href = '/api/reports';
+        });
+    }
+}
 
 function initRequestFilm() {
     const btn = document.getElementById('requestBtn');
@@ -67,8 +165,13 @@ function initRequestFilm() {
                     state.adminPass = pass; // Keep for subsequent requests (headers)
                     alert('🔓 Admin Mode Unlocked!');
                     document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+
+                    // Show Admin FABs
                     const csvBtn = document.getElementById('getCsvBtn');
                     if (csvBtn) csvBtn.classList.remove('hidden');
+                    const repBtn = document.getElementById('getReportsBtn');
+                    if (repBtn) repBtn.classList.remove('hidden');
+
                     if (typeof render === 'function') render();
                 } else {
                     alert('❌ Access Denied');
@@ -241,9 +344,10 @@ function normalize() {
         original: (r.original || '').trim(),
         year: r.year ? parseInt(r.year) : null,
         director: (r.director || '').trim(),
-        lb: r.letterboxd,
+        lb: r.letterboxd || r.lb, // Flexible
         drive: r.drive,
-        dl: r.download,
+        dl: r.download || r.dl,
+        downloadLinks: r.downloadLinks || [], // CRITICAL FIX
         _s: [(r.title || ''), (r.original || ''), (r.director || ''), (r.year || '')].join(' ').toLowerCase()
     }));
 }
@@ -448,6 +552,9 @@ function render() {
     const frag = document.createDocumentFragment();
     const isAdmin = state.userMode === 'admin';
 
+    // DEBUG LOG
+    console.log('Rendering', pageRows.length, 'items. Sample:', pageRows[0]);
+
     pageRows.forEach((r, idx) => {
         const card = document.createElement('article');
         card.className = 'card';
@@ -473,12 +580,38 @@ function render() {
             ${renderRating(r.__id, r.ratingSum, r.ratingCount)}`;
 
         // Buttons
-        const lbBtn = r.lb ? `<a class="btn letter" href="${r.lb}" target="_blank">${ICONS.letterboxd} Letterboxd</a>` : '';
-        const drBtn = r.drive ? `<a class="btn drive" href="${r.drive}" target="_blank">${ICONS.drive} Drive</a>` : '';
-        const dlBtn = r.dl ? `<a class="btn download" href="${r.dl}" target="_blank">${ICONS.download} Download</a>` : '';
+        // --- Download Logic (Glossy Dropdown) ---
+        let downloadHtml = '';
+        let links = r.downloadLinks || [];
+
+        // Safety Fallback for old schema
+        if (links.length === 0) {
+            if (r.dl && r.dl.startsWith('http')) links.push({ label: 'Download', url: r.dl });
+            if (r.drive && r.drive.startsWith('http') && r.drive !== r.dl) links.push({ label: 'Drive', url: r.drive });
+        }
+
+        if (links.length > 1) {
+            // Dropdown
+            // Note: onclick handling for dropdown items to prevent card click propagation
+            const items = links.map(l => `<a href="${l.url}" target="_blank" class="dropdown-item" onclick="event.stopPropagation()">${l.label || 'Link'}</a>`).join('');
+            downloadHtml = `
+            <div class="download-wrapper" onclick="event.stopPropagation()">
+                <div class="download-btn">Downloads ▾</div>
+                <div class="dropdown-content">${items}</div>
+            </div>`;
+        } else if (links.length === 1) {
+            // Single Button
+            downloadHtml = `<a class="btn download" href="${links[0].url}" target="_blank" onclick="event.stopPropagation()">${ICONS.download} Download</a>`;
+        } else {
+            // No Link
+            downloadHtml = `<span class="btn download" style="opacity:0.5;cursor:not-allowed">${ICONS.download} No Link</span>`;
+        }
+
+        // Letterboxd
+        const lbBtn = r.lb ? `<a class="btn letter" href="${r.lb}" target="_blank" onclick="event.stopPropagation()">${ICONS.letterboxd} Letterboxd</a>` : '';
 
         const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r.__id}')" title="View Plot">
-            ${ICONS.info} Plot of film
+            ${ICONS.info} Info
         </button>`;
 
         card.innerHTML = `
@@ -490,7 +623,7 @@ function render() {
             <div class="meta">${metaHtml}</div>
             
             <div class="actions">
-                ${lbBtn} ${drBtn} ${dlBtn} ${plotBtn}
+                ${lbBtn} ${downloadHtml} ${plotBtn}
             </div>
         `;
         frag.appendChild(card);
@@ -842,9 +975,9 @@ window.rateFilm = rateFilm;
 // --- Tips & Updates Manager ---
 const TipsManager = {
     updates: [
-        "✨ **New Rating System:** Rate films with Eggs (0) to 5 Stars!",
-        "🛠️ **Poster Fix:** 'The Alienist' (1970) now shows the correct poster.",
-        "📱 **Import Fix:** CSV imports are now smoother and faster."
+        "✨ **Fresh Look:** Enjoy our new glossy, glass-morphism design!",
+        "📢 **Feedback:** Found a broken link? Use the new 'Report Issue' button on any film.",
+        "🚀 **Performance:** Simpler, faster, and smoother than ever."
     ],
     tips: [
         "💡 **Tip:** Click any *Director's Name* to instantly filter their films.",
@@ -856,14 +989,28 @@ const TipsManager = {
     isOpen: false,
 
     init() {
-        if (localStorage.getItem('hideTips') === 'true') return;
+        // 1. Check Global User Preference (Always respected)
+        if (localStorage.getItem('hideTips') === 'true') {
+            console.log('TipsManager: Tips globally hidden by user.');
+            return;
+        }
 
+        // 2. Check Session (Show once per tab/reload cycle)
+        if (sessionStorage.getItem('tipsShown')) {
+            console.log('TipsManager: Tips already shown this session.');
+            return;
+        }
+
+        console.log('TipsManager: Injecting modal...');
         this.injectModal();
-        // Show after a slight delay so page loads first
-        setTimeout(() => this.show(), 1000);
+
+        // Show after a slight delay to ensure DOM is ensuring layout
+        setTimeout(() => this.show(), 1500);
     },
 
     injectModal() {
+        if (document.getElementById('tips-modal')) return; // Prevent duplicates
+
         const div = document.createElement('div');
         div.id = 'tips-modal';
         div.innerHTML = `
@@ -875,8 +1022,8 @@ const TipsManager = {
                 <!-- Dynamic Content -->
             </div>
             <div class="tips-controls">
-                <button class="tips-btn" onclick="TipsManager.turnOff()">Don't show again</button>
-                <div style="display:flex;gap:10px;">
+                <div style="display:flex;gap:10px;width:100%;justify-content:flex-end;">
+                    <button class="tips-btn secondary" onclick="TipsManager.turnOff()" style="font-size:0.8rem;opacity:0.7;margin-right:auto;">Don't show again</button>
                     <button class="tips-btn" onclick="TipsManager.next()">Next Tip</button>
                 </div>
             </div>
@@ -915,9 +1062,16 @@ const TipsManager = {
     show() {
         const el = document.getElementById('tips-modal');
         if (el) {
+            console.log('TipsManager: Showing modal now.');
+            // Force Reflow
+            void el.offsetWidth;
             el.classList.add('visible');
             this.startTimer();
             this.isOpen = true;
+            // Mark as shown for this session
+            sessionStorage.setItem('tipsShown', 'true');
+        } else {
+            console.error('TipsManager: Modal element missing!');
         }
     },
 
@@ -934,12 +1088,15 @@ const TipsManager = {
     next() {
         this.currentIdx++;
         this.renderContent();
+        // Reset timer on interaction
         this.resetTimer();
     },
 
     turnOff() {
-        localStorage.setItem('hideTips', 'true');
-        this.close(true);
+        if (confirm('Hide these tips for future visits? (You can clear cache to reset)')) {
+            localStorage.setItem('hideTips', 'true');
+            this.close(true);
+        }
     },
 
     startTimer() {
@@ -975,31 +1132,44 @@ const TipsManager = {
         // Stop the close timer but keep modal open
         if (this.timer) clearTimeout(this.timer);
         const progress = document.getElementById('tips-progress');
-        // Freeze animation at current state? Hard with simple CSS transition.
-        // For now, just stop the bar appearing to signify "held"
         if (progress) {
+            // Freeze visual state roughly 
+            const computedStyle = window.getComputedStyle(progress);
+            const w = computedStyle.width;
             progress.style.transition = 'none';
-            progress.style.transform = 'scaleX(0)';
+            progress.style.width = w;
         }
     },
 
     resumeTimer() {
-        if (this.isOpen) this.startTimer();
+        // For simplicity, just restart timer if mouse leaves
+        if (this.isOpen) {
+            const progress = document.getElementById('tips-progress');
+            if (progress) progress.style.width = ''; // Reset inline override
+            this.startTimer();
+        }
     },
 
     resetTimer() {
-        this.pauseTimer();
+        this.stopTimer();
         this.startTimer();
     }
 };
 
-// Replace window.onload to include Tips init
-const originalOnLoad = window.onload;
-window.onload = function () {
-    if (originalOnLoad) originalOnLoad();
-    renderHero();
-    TipsManager.init();
-};
+// Initialization using DOMContentLoaded for reliability
+document.addEventListener('DOMContentLoaded', () => {
+    // Only init tips if NOT hidden by local preference
+    setTimeout(() => {
+        TipsManager.init();
+    }, 500); // Small delay to ensure main app renders first
+
+    // Also render hero if not already done (Safety)
+    if (typeof renderHero === 'function') renderHero();
+});
+
+// Remove old window.onload override to prevent conflicts
+// const originalOnLoad = window.onload; // REMOVED
+// window.onload = ... // REMOVED
 
 window.TipsManager = TipsManager; // Expose globally
 

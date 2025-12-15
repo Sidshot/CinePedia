@@ -204,26 +204,63 @@
     </svg>
   </button>
 
-  <!-- Get CSV Floating Button (Admin) -->
-  <button id="getCsvBtn" class="fab-csv hidden" aria-label="Download Requests">
-    <svg class="ui-icon" viewBox="0 0 24 24" style="width:24px;height:24px;">
-      <path
-        d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-    </svg>
-    <span class="fab-label">Get CSV</span>
-  </button>
+  <!-- Get CSV & Reports Floating Buttons (Admin) -->
+  <div class="admin-fab-group">
+    <button id="getCsvBtn" class="fab-mini hidden" aria-label="Download Requests" title="Get Requests CSV">
+      <svg class="ui-icon" viewBox="0 0 24 24" style="width:20px;height:20px;">
+        <path
+          d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+      </svg>
+    </button>
+    <button id="getReportsBtn" class="fab-mini hidden" aria-label="Download Reports" title="Get Issues Report">
+      <svg class="ui-icon" viewBox="0 0 24 24" style="width:20px;height:20px;">
+        <path
+          d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v3z" />
+      </svg>
+    </button>
+  </div>
 
-  <!-- Request Film Floating Button -->
-  <button id="requestBtn" class="fab-request" aria-label="Request Film">
-    <svg class="ui-icon" viewBox="0 0 24 24" style="width:24px;height:24px;">
-      <path
-        d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,7H13V11H17V13H13V17H11V13H7V11H11V7Z" />
-    </svg>
-    <span class="fab-label">Request Film</span>
-  </button>
+  <!-- Big Floating Action Buttons -->
+  <div class="fab-container">
+    <!-- Report Issues Button -->
+    <button id="reportBtn" class="fab-main report-fab" aria-label="Report Issues">
+      <svg class="ui-icon" viewBox="0 0 24 24">
+        <path
+          d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V7h2v3z" />
+      </svg>
+      <span class="fab-label">Report Issue</span>
+    </button>
+
+    <!-- Request Film Button -->
+    <button id="requestBtn" class="fab-main request-fab" aria-label="Request Film">
+      <svg class="ui-icon" viewBox="0 0 24 24">
+        <path
+          d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,7H13V11H17V13H13V17H11V13H7V11H11V7Z" />
+      </svg>
+      <span class="fab-label">Request Film</span>
+    </button>
+  </div>
+
+  <!-- Report Modal (Hidden by Default) -->
+  <div id="reportModal" class="modal-overlay hidden">
+    <div class="glossy-modal">
+      <button id="closeReportBtn" class="close-btn">&times;</button>
+      <h2>Report an issue</h2>
+      <p class="modal-desc">Found a bug or missing film? Let us know.</p>
+
+      <div class="input-group">
+        <input type="text" id="reportName" class="glossy-input" placeholder="Your Name (Optional)">
+      </div>
+      <div class="input-group">
+        <textarea id="reportMsg" class="glossy-textarea" placeholder="Describe the issue..."></textarea>
+      </div>
+
+      <button id="submitReportBtn" class="glossy-btn">Send Report</button>
+    </div>
+  </div>
 
   <!-- Logic (Versioned for Cache Busting) -->
-  <script src="js/app.js?v=2"></script>
+  <script src="js/app.js?v=6.0"></script>
 
 </body>
 

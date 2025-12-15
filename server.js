@@ -30,8 +30,49 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' }));
 
-// Database Connection
+// --- REPORT API ROUTES (Placed early to avoid 404) ---
+const REPORTS_FILE = path.join(__dirname, 'data', 'reports.txt');
 const fs = require('fs');
+
+// POST /api/report
+app.post('/api/report', (req, res) => {
+    try {
+        const { name, message } = req.body;
+        console.log('Received Report:', { name, message }); // Debug log
+        if (!message) return res.status(400).json({ error: 'Message required' });
+
+        const user = name || 'Anonymous';
+        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        const line = `[${timestamp}] ${user}: ${message.replace(/\n/g, ' ')}\n`;
+
+        // Ensure directory exists
+        const dir = path.dirname(REPORTS_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+        fs.appendFile(REPORTS_FILE, line, (err) => {
+            if (err) {
+                console.error('Report Write Error:', err);
+                return res.status(500).json({ error: 'Failed' });
+            }
+            res.json({ success: true });
+        });
+    } catch (e) {
+        console.error('Report Fatal:', e);
+        res.status(500).json({ error: 'Server Error' });
+    }
+});
+
+// GET /api/reports (Admin)
+app.get('/api/reports', (req, res) => {
+    if (fs.existsSync(REPORTS_FILE)) {
+        res.download(REPORTS_FILE, 'reports.txt');
+    } else {
+        res.status(404).send('No reports found.');
+    }
+});
+// -----------------------------------------------------
+
+// Database Connection
 const connectDB = async () => {
     if (!config.MONGO_URI) {
         console.log('⚠️ No MONGO_URI found. Server will start but DB calls will fail.');
@@ -344,6 +385,9 @@ app.post('/api/request', async (req, res) => {
         res.status(500).json({ error: 'Failed to save request' });
     }
 });
+
+// (Report API routes moved to top of file)
+
 
 // Start Server
 app.listen(PORT, () => {
