@@ -95,23 +95,26 @@ export default function MovieGrid({ initialMovies, currentPage = 1, totalPages =
                     const lbLink = movie.letterboxd || movie.lb; // Support both keys
                     return (
                         <div key={movie._id || movie.__id} className="group relative flex flex-col h-full p-4 rounded-[var(--radius)] card-gloss transition-all hover:-translate-y-2 hover:shadow-2xl hover:border-white/20">
-                            {/* Poster Link */}
-                            <Link href={`/movie/${movie._id || movie.__id}`} className="block aspect-[2/3] w-full rounded-xl mb-4 shadow-lg overflow-hidden relative">
-                                <OptimizedPoster
-                                    src={movie.poster}
-                                    title={movie.title}
-                                    year={movie.year}
-                                    width={250}
-                                    height={375}
-                                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                            {/* Poster Container */}
+                            <div className="relative aspect-[2/3] w-full rounded-xl mb-4 shadow-lg overflow-hidden">
+                                {/* Poster Link */}
+                                <Link href={`/movie/${movie._id || movie.__id}`} className="block w-full h-full">
+                                    <OptimizedPoster
+                                        src={movie.poster}
+                                        title={movie.title}
+                                        year={movie.year}
+                                        width={250}
+                                        height={375}
+                                        className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                                </Link>
 
-                                {/* Save Button - Top Right */}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                {/* Save Button - Top Right (Outside Link) */}
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                     <AddToListButton movieId={movie._id || movie.__id} movieTitle={movie.title} variant="icon" />
                                 </div>
-                            </Link>
+                            </div>
 
                             {/* Title Link */}
                             <Link href={`/movie/${movie._id || movie.__id}`} className="block">
