@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/mongodb';
 import Movie from '@/models/Movie';
 import mongoose from 'mongoose';
+import { getPosterUrl, getBackdropUrl } from '@/lib/images';
 
 // Force dynamic rendering if params are not known static (which they aren't)
 // actually in Next 13+ app dir, dynamic segments are dynamic by default if not generated static.
@@ -89,8 +90,8 @@ export default async function MoviePage({ params }) {
         if (movie.drive) links.push({ label: 'Google Drive', url: movie.drive });
     }
 
-    const posterUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${movie.title}" (${movie.year}) film poster`)}&w=300&h=450&c=7&rs=1&p=0`;
-    const backdropUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${movie.title}" (${movie.year}) film scene high quality`)}&w=1200&h=600&c=7&rs=1&p=0`;
+    const posterUrl = getPosterUrl(movie.title, movie.year, movie.poster);
+    const backdropUrl = getBackdropUrl(movie.title, movie.year, movie.backdrop);
 
     return (
         <main className="min-h-screen p-0 bg-[var(--bg)]">

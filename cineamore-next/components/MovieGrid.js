@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import SearchBar from './SearchBar';
+import { getPosterUrl } from '@/lib/images';
 
 export default function MovieGrid({ initialMovies }) {
     const [query, setQuery] = useState('');
@@ -94,7 +95,7 @@ export default function MovieGrid({ initialMovies }) {
                             {/* Poster Link */}
                             <Link href={`/movie/${movie._id || movie.__id}`} className="block aspect-[2/3] w-full rounded-xl bg-black/40 mb-4 shadow-lg overflow-hidden relative">
                                 <img
-                                    src={`https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${movie.title}" (${movie.year}) film poster`)}&w=300&h=450&c=7&rs=1&p=0`}
+                                    src={getPosterUrl(movie.title, movie.year, movie.poster)}
                                     alt={movie.title}
                                     className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
                                     loading="lazy"

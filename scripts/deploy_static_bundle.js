@@ -7,7 +7,7 @@ function generateId() {
     return crypto.randomBytes(12).toString('hex');
 }
 
-const SOURCE_PATH = path.join(__dirname, '../data/cinepedia.data.json');
+const SOURCE_PATH = path.join(__dirname, '../data/cinepedia.data.with_ids.json');
 const DEST_PATH = path.join(__dirname, '../cineamore-next/lib/movies.json');
 
 try {
@@ -19,8 +19,8 @@ try {
 
     const processed = movies.map((movie, index) => {
         return {
-            _id: generateId(),
-            __id: generateId(), // Legacy ID support
+            _id: movie._id || generateId(),
+            __id: movie.__id || generateId(), // Legacy ID support
             title: movie.title,
             year: movie.year || 'N/A',
             director: movie.director || 'Unknown',
