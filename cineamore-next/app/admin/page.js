@@ -1,0 +1,111 @@
+import { logout } from '@/lib/auth';
+import { deleteMovie } from '@/lib/actions';
+import dbConnect from '@/lib/mongodb';
+import Movie from '@/models/Movie';
+import SearchBar from '@/components/SearchBar';
+import Link from 'next/link';
+
+export default async function AdminDashboard({ searchParams }) {
+    await dbConnect();
+    const query = (await searchParams)?.q || '';
+
+    // Search Logic (reuse from Home, or simplified)
+    const filter = query ? {
+        $or: [
+            { title: { $regex: query, $options: 'i' } },
+            { director: { $regex: query, $options: 'i' } },
+            // Year check needs casting if numeric, regex works if string or via aggregation. 
+            // For simplicity in Admin regex title/director is usually enough.
+        ]
+    } : {};
+
+    // Limit to 50 for admin perf, no pagination yet for simplicity
+    const movies = await Movie.find(filter).sort({ addedAt: -1 }).limit(50).lean();
+
+    return (
+        <main className="min-h-screen p-8 max-w-7xl mx-auto bg-[var(--bg)]">
+            <header className="flex flex-col md:flex-row justify-between items-center mb-12 border-b border-[var(--border)] pb-6 gap-4">
+                <div>
+                    <h1 className="text-4xl font-extrabold text-[var(--fg)]">Admin Dashboard</h1>
+                    <p className="text-[var(--muted)]">Manage your Infinite Cinema catalogue.</p>
+                </div>
+
+                <div className="flex gap-4 items-center">
+                    <Link
+                        href="/admin/add"
+                        className="bg-[var(--accent)] hover:brightness-110 text-[var(--bg)] font-bold px-6 py-2 rounded-xl transition shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]"
+                    >
+                        + Add Movie
+                    </Link>
+                    <form action={logout}>
+                        <button className="bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold px-6 py-2 rounded-xl transition">
+                            Log Out
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <div className="mb-8 max-w-md">
+                <SearchBar placeholder="Search movies to edit..." />
+            </div>
+
+            <div className="bg-[var(--card-bg)] rounded-3xl border border-[var(--border)] overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-black/20 text-[var(--muted)] text-xs uppercase tracking-wider">
+                        <tr>
+                            <th className="p-4 font-bold border-b border-[var(--border)]">Title</th>
+                            <th className="p-4 font-bold border-b border-[var(--border)] hidden md:table-cell">Details</th>
+                            <th className="p-4 font-bold border-b border-[var(--border)] text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                        {movies.map(movie => {
+                            const id = movie._id.toString();
+                            return (
+                                <tr key={id} className="hover:bg-white/5 transition group">
+                                    <td className="p-4">
+                                        <div className="font-bold text-[var(--fg)]">{movie.title}</div>
+                                        <div className="text-xs text-[var(--muted)] md:hidden">{movie.year} • {movie.director}</div>
+                                    </td>
+                                    <td className="p-4 hidden md:table-cell">
+                                        <div className="text-sm text-[var(--muted)]">
+                                            <span className="text-[var(--fg)]">{movie.year}</span>
+                                            <span className="mx-2">•</span>
+                                            {movie.director}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-right flex justify-end gap-3 items-center">
+                                        <Link
+                                            href={`/admin/edit/${id}`}
+                                            className="text-sm font-bold text-[var(--accent)] hover:underline opacity-80 hover:opacity-100"
+                                        >
+                                            Edit
+                                        </Link>
+                                        <form action={deleteMovie.bind(null, id)}>
+                                            <button
+                                                onClick="return confirm('Delete this movie?');"
+                                                className="text-sm font-bold text-red-500 hover:text-red-400 opacity-60 hover:opacity-100 transition"
+                                            >
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {movies.length === 0 && (
+                            <tr>
+                                <td colSpan="3" className="p-8 text-center text-[var(--muted)]">
+                                    No movies found matching "{query}".
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            {movies.length >= 50 && (
+                <p className="text-center text-[var(--muted)] text-xs mt-4">Showing most recent 50 results. Use search to find specific items.</p>
+            )}
+        </main>
+    );
+}

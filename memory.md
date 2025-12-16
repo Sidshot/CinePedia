@@ -1,9 +1,9 @@
 # CineAmore Session Memory
-**Last Updated:** 2025-12-15
+**Last Updated:** 2025-12-16 (Phase 2.3 - Admin CRUD Complete)
 
 ## 🟢 Current Status
-*   **Active Branch:** `main` (Deployed)
-*   **Mode:** `IDLE` (Live & Stable)
+*   **Active Branch:** `v2/identity-migration` (WIP)
+*   **Mode:** `MIGRATION` (V2 Parallel Dev)
 *   **Server Status:** Verified (Live Site Updated)
 
 ## 📝 Staged Changes
@@ -12,14 +12,16 @@
 *   **Backup:** Created `backup/pre-v2-migration` branch at current HEAD.
 
 ## 🐛 Active Bugs
-*   *None known.* (System is stable).
+*   *None known.* (V2 is parallel, V1 is stable).
+*   **Resolved:** V2 Dynamic Routing 404s fixed by correcting directory structure.
 
 ## ✅ Recent Actions
-1.  **Fixed & Finalized:** Resolved `TipsManager` timing bug.
-2.  **Established Workflow:** Added "Updates Tab Maintenance" rule to docs.
-3.  **Deployed:** Merged `feat/multi-download-options` to `main` and pushed.
-    *   SHA: `f39eac3`
-    *   Features: Glossy UI, Report Issue, Tips Modal.
+1.  **Phase 1 Complete:** Migrated identity to `ObjectId` (2446 films).
+2.  **Phase 2 Started:** Initialized `cineamore-next` with Next.js & Tailwind.
+3.  **Phase 2.1 Complete:** Implemented Client-Side Filter & Dynamic Details Page (`/movie/[id]`).
+4.  **Parity Verified:** V2 matches V1 core functionality (Browse + Details).
+5.  **Secure:** Implemented Master Password Auth for V2 Admin routes.
+6.  **Crud Complete:** Phase 2.3 (Add/Edit/Delete) implemented with verified Server Actions.
 
 ## ⏭️ Immediate Next Steps
 1.  **Phase 1 Migration:** Create `migration_v1_identity.js` to assign stable `_id` (UUID/ObjectId) to all films.
@@ -29,6 +31,7 @@
 
 ## 🧠 Key Context & Rules
 *   **Identity:** Film Catalogue (Not streaming/social).
+*   **Add/Edit/Delete:** Full Admin CRUD for Movie management.
 *   **Constraint:** Preserve `__id` logic. No Front-End Frameworks.
 *   **Process:** Branch -> Local Verify -> **Update 'Updates' Tab** -> Commit -> Report. (NEVER touch Main).
 *   **Update Rule:** Always update `TipsManager.updates` in `app.js` with user-friendly, hype-driven changelogs (no tech jargon) before every deployment.
@@ -43,15 +46,50 @@
 
 ## 🚀 V2 Roadmap ("The Infinite Scale")
 ### Phase 1: Core Architecture (Stability)
-- [ ] **Immutable Identity:** Migrate from Title+Year to `_id` (UUID/ObjectId).
-- [ ] **Auth:** Implement Admin Token (JWT) + Google Auth (Guest).
+- [x] **Immutable Identity:** Migrate from Title+Year to `_id` (UUID/ObjectId).
+- [x] **Auth:** Implement Admin Token (JWT) + Google Auth (Guest).
 - [ ] **Caching:** Pre-compute aggregation stats (directors, years).
 
 ### Phase 2: Frontend Evolution
-- [ ] **Next.js Migration:** React, SSR, Tailwind, React Query.
+- [x] **Feature Parity:** Search, Filtering, and Detailed Movie Pages (Next.js).
 - [ ] **Image Optimization:** Cloudinary/ImageKit integration.
 
 ### Phase 3: Infinite Expansion
 - [ ] **Automated Data:** TMDB API integration.
 - [ ] **AI Search:** Vector embeddings for "Vibe Search".
 - [ ] **Social:** Lists, Activity Feeds.
+
+## 🛑 Session Handoff (2025-12-16)
+**Everything is Saved & Verified.**
+
+### 🖥️ Environment Status
+*   **V2 App (Next.js):** Running on `http://localhost:3002` (PID: Depends on restart).
+*   **V1 App (Legacy):** Running on `http://localhost:3000` (PID: 1240).
+*   **Database:** `cinepedia` (Local MongoDB).
+*   **Active Directory:** `d:\CinePedia - IDL\CinePedia\cineamore-next` (Majority of work here).
+
+### 🔑 Authentication & Secrets
+*   **Admin Route:** `/admin` (Protected).
+*   **Login Route:** `/login`.
+*   **Credentials:** `ADMIN_PASSWORD` and `JWT_SECRET` are set in `.env.local` (GitIgnored).
+    *   *Dev Password:* `admin123` (Default backup if env missing).
+    *   *Library:* `jose` used for edge-compatible JWT cookies.
+
+### 🛠️ Completed Implementation
+1.  **Feature Parity (Phase 2.1):**
+    *   Home Grid with Client-Side Search (Title/Year/Director).
+    *   Dynamic Details Page (`/movie/[id]`) supporting both `_id` and legacy `__id`.
+    *   Hydration Error suppressed in `layout.js` (User extension issue).
+2.  **Authentication (Phase 2.2):**
+    *   Middleware protection for `/admin`.
+    *   Lightweight JWT session capability.
+3.  **Admin CRUD (Phase 2.3):**
+    *   **Add/Edit/Delete** Fully functional using Server Actions (`lib/actions.js`).
+    *   **Zod Validation** ensures data integrity.
+    *   **Glossy UI** forms (`MovieForm.js`) match V2 aesthetic.
+    *   **Verified:** Added "JS Force" movie and deleted it.
+
+### ⏭️ Next Session Goals
+1.  **Deployment:** Push to a preview environment (Vercel/Netlify) to verify mobile responsiveness in the wild.
+2.  **Rating System:** Port the star rating logic to Next.js Server Actions.
+3.  **Image Uploads:** Currently using URL strings; consider Cloudinary implementation.

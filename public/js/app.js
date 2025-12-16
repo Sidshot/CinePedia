@@ -564,8 +564,9 @@ function render() {
         const yr = r.year || NA;
 
         // --- Edit Button (Admin Only) ---
-        // V2 MIGRATION: Use _id (ObjectId) strictly
-        const editBtn = isAdmin ? `<button class="edit-btn" onclick="openEditDialog('${r._id}')">${ICONS.edit} Edit</button>` : '';
+        // V2 MIGRATION: Use _id (ObjectId) providing fallback to __id
+        const fid = r._id || r.__id;
+        const editBtn = isAdmin ? `<button class="edit-btn" onclick="openEditDialog('${fid}')">${ICONS.edit} Edit</button>` : '';
 
         // Poster
         const posterUrl = getPosterUrl(r.title, r.year);
@@ -578,7 +579,7 @@ function render() {
         const metaHtml = `
             <span class="kv"><span class="label">Original:</span> ${r.original ? escapeHtml(r.original) : NA}</span>
             <span class="kv"><span class="label">Director:</span> ${r.director ? `<a href="#" onclick="event.stopPropagation();filterByDir('${escapeHtml(r.director)}')" style="color:inherit;text-decoration:none;border-bottom:1px dotted;">${highlight(r.director, state.q)}</a>` : NA}</span>
-            ${renderRating(r._id, r.ratingSum, r.ratingCount)}`;
+            ${renderRating(fid, r.ratingSum, r.ratingCount)}`;
 
         // Buttons
         // --- Download Logic (Glossy Dropdown) ---
@@ -611,7 +612,7 @@ function render() {
         // Letterboxd
         const lbBtn = r.lb ? `<a class="btn letter" href="${r.lb}" target="_blank" onclick="event.stopPropagation()">${ICONS.letterboxd} Letterboxd</a>` : '';
 
-        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${r._id}')" title="View Plot">
+        const plotBtn = `<button class="btn info" onclick="event.stopPropagation(); fetchDetails('${fid}')" title="View Plot">
             ${ICONS.info} Info
         </button>`;
 

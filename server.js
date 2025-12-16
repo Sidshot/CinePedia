@@ -173,6 +173,28 @@ app.get('/api/movies', async (req, res) => {
     }
 });
 
+// GET /api/movies/:id - Get Single
+app.get('/api/movies/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        let query;
+
+        if (mongoose.Types.ObjectId.isValid(id)) {
+            query = { _id: id };
+        } else {
+            query = { __id: id };
+        }
+
+        const movie = await Movie.findOne(query);
+        if (!movie) return res.status(404).json({ error: 'Movie not found' });
+
+        res.json(movie);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch movie' });
+    }
+});
+
 // POST /api/movies - Create new
 app.post('/api/movies', requireAdmin, async (req, res) => {
     try {
