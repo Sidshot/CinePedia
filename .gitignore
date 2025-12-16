@@ -2,3 +2,7 @@ node_modules/
 .env
 # data/cinepedia.data.json
 .DS_Store
+
+.next/
+.env.local
+.env.production
