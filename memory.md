@@ -23,26 +23,29 @@
 5.  **Secure:** Implemented Master Password Auth for V2 Admin routes.
 6.  **Crud Complete:** Phase 2.3 (Add/Edit/Delete) implemented with verified Server Actions.
 
-## ⏭️ Immediate Next Steps
-1.  **Phase 1 Migration:** Create `migration_v1_identity.js` to assign stable `_id` (UUID/ObjectId) to all films.
-2.  **Harden Logic:** Update backend to use `_id` instead of Title+Year.
-3.  **Parallel Dev:** Initialize Next.js project in `cineamore-next` folder (Phase 2).
-4.  **REMINDER:** Do NOT touch `main` branch or live site until Phase 2 is 100% ready.
+## ⏭️ Immediate Next Steps (Strict Order)
+1.  **Freeze V1:** Disconnect write paths/ensure read-only (Done).
+2.  **Deploy V2:** Push `v2/identity-migration` to Vercel (Preview/Prod).
+3.  **Refine Config:** Decide on Image Proxy (Commit or Defer).
+4.  **Phase 3:** Cut roadmap to ONE concrete feature (Social/Lists).
 
 ## 🧠 Key Context & Rules
 *   **Identity:** Film Catalogue (Not streaming/social).
 *   **Add/Edit/Delete:** Full Admin CRUD for Movie management.
-*   **Constraint:** Preserve `__id` logic. No Front-End Frameworks.
-*   **Process:** Branch -> Local Verify -> **Update 'Updates' Tab** -> Commit -> Report. (NEVER touch Main).
+*   **Constraint:** Preserve `__id` logic. **Framework:** Next.js (App Router).
+*   **Process:** Branch -> Local Verify -> **Update 'Updates' Tab** -> Commit -> Report.
 *   **Update Rule:** Always update `TipsManager.updates` in `app.js` with user-friendly, hype-driven changelogs (no tech jargon) before every deployment.
 *   **Pre-Flight:** Review `memory.md` for clean code/context before pushing.
 
 ## 🛡️ Failsafe Protocol (Nuclear Doomsday)
 1.  **Backup Location:** Branch `backup/pre-v2-migration` (Contains the "Golden" state of V1).
 2.  **Restore:** If V2 fails, `git checkout backup/pre-v2-migration` and re-deploy.
-3.  **Record Failures:** If a task fails, log it here immediately under "Current Status".
-4.  **When Stuck:** READ THIS FILE. It is the absolute source of truth.
-5.  **Restore Context:** Use this file to reboot the "Mind Meld" after any crash, cache clear, or conversation reset.
+3.  **V1 Status:** **FROZEN (Read-Only).** Writes disabled in `server.js`.
+
+## 🔐 Auth Strategy (Soft Internal)
+*   **Model:** Lightweight Admin / Shared Password.
+*   **Context:** Catalogue application. Not a social platform.
+*   **Rule:** Explicitly maintained as "Soft" until Phase 3 (Social Features).
 
 ## 🚀 V2 Roadmap ("The Infinite Scale")
 ### Phase 1: Core Architecture (Stability)
@@ -105,3 +108,27 @@
     *   **HTML Nesting:** Refactored `MovieGrid.js` to remove illegal `<a>` inside `<a>` nesting, allowing sibling links for "Download" and "Letterboxd".
     *   **Hydration Mismatch:** Hardened `MovieGrid` year/director sorting to strict types (Integer/String) to prevent server/client sort differences with "N/A" values.
 *   **Status:** All features verified on localhost:3002. Code pushed to `v2/identity-migration`.
+
+### 2025-12-16: V2 Identity Migration & Features Complete
+*   **Major Milestone: Identity Migration**
+    *   **Persistent IDs:** Generated stable `_id` and `__id` for all movies using `scripts/stabilize_ids.js`.
+    *   **Logic:** IDs are now derived from Letterboxd URL (primary) or Title+Year+Director hash (backup), ensuring they persist across deployments.
+    *   **Deploy Script:** Updated `deploy_static_bundle.js` to preserve these stable IDs during bundling.
+
+*   **V2 Feature Refinements (The "Polish" Phase)**
+    *   **Missing Features Restored:**
+        *   **Request & Report:** Ported from legacy V1. Implemented as Floating Action Buttons (FABs) with "Glossy iOS" styling.
+        *   **Backend:** Created `models/Request.js` and `models/Report.js` + API routes to store user interactions in MongoDB.
+    *   **Dynamic Hero:** Converted the "A Film For You" Hero section to a Client Component. It now reliably randomizes the movie on every browser refresh.
+    *   **Header Polish:** Added a scroll listener to fade out the "CineAmore" title when scrolling down.
+    *   **Image Optimization:** Centralized image URL logic (`lib/images.js`) with support for a future Image Proxy via `NEXT_PUBLIC_IMAGE_PROXY`.
+
+*   **Debugging & Stability**
+    *   **Duplicate Key Crash:** Fixed a critical React crash caused by duplicate movies in the list. Added deduplication logic to `app/page.js` that runs for both DB and Static data sources.
+    *   **Wait, why is Auth failing locally?** Clarified that "Authentication Failed" on localhost is expected if the MongoDB credentials are unset/invalid, but the site successfully falls back to "Static Mode" (View Only). Added user-friendly alerts to explain this.
+
+*   **Ready for:**
+    1.  **Production Deployment:** (Vercel/Netlify).
+    2.  **Proxy Setup:** Setting up an ImageKit/Cloudinary proxy for potentially faster images.
+    3.  **Real Auth Fix:** Getting the local MongoDB connection 100% stable for the user.
+

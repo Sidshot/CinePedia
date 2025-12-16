@@ -35,31 +35,9 @@ const REPORTS_FILE = path.join(__dirname, 'data', 'reports.txt');
 const fs = require('fs');
 
 // POST /api/report
+// POST /api/report - FROZEN
 app.post('/api/report', (req, res) => {
-    try {
-        const { name, message } = req.body;
-        console.log('Received Report:', { name, message }); // Debug log
-        if (!message) return res.status(400).json({ error: 'Message required' });
-
-        const user = name || 'Anonymous';
-        const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        const line = `[${timestamp}] ${user}: ${message.replace(/\n/g, ' ')}\n`;
-
-        // Ensure directory exists
-        const dir = path.dirname(REPORTS_FILE);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-        fs.appendFile(REPORTS_FILE, line, (err) => {
-            if (err) {
-                console.error('Report Write Error:', err);
-                return res.status(500).json({ error: 'Failed' });
-            }
-            res.json({ success: true });
-        });
-    } catch (e) {
-        console.error('Report Fatal:', e);
-        res.status(500).json({ error: 'Server Error' });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // GET /api/reports (Admin)
@@ -196,84 +174,21 @@ app.get('/api/movies/:id', async (req, res) => {
 });
 
 // POST /api/movies - Create new
+// POST /api/movies - FROZEN
 app.post('/api/movies', requireAdmin, async (req, res) => {
-    try {
-        const newFilm = req.body;
-        if (!newFilm.title) return res.status(400).json({ error: 'Title required' });
-
-        newFilm.__id = generateId(newFilm);
-
-        const created = await Movie.create(newFilm);
-        res.json({ success: true, film: created });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to create film' });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // PUT /api/movies/:id - Update existing
+// PUT /api/movies/:id - FROZEN
 app.put('/api/movies/:id', requireAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const update = req.body;
-
-        let query;
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            query = { _id: id };
-        } else {
-            query = { __id: id };
-        }
-
-        const updated = await Movie.findOneAndUpdate(query, update, { new: true });
-
-        if (!updated) return res.status(404).json({ error: 'Not found' });
-
-        res.json({ success: true, film: updated });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to update' });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // POST /api/movies/:id/rate - Rate a film
+// POST /api/movies/:id/rate - FROZEN
 app.post('/api/movies/:id/rate', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { value } = req.body; // 0 (Egg) to 5
-
-        if (typeof value !== 'number' || value < 0 || value > 5) {
-            return res.status(400).json({ error: 'Invalid rating' });
-        }
-
-        // Atomic update
-        let query;
-        if (mongoose.Types.ObjectId.isValid(id)) {
-            console.log(`[DEBUG] Updating by ObjectId: ${id}`);
-            query = { _id: id };
-        } else {
-            console.log(`[DEBUG] Updating by Legacy __id: ${id}`);
-            query = { __id: id };
-        }
-
-        const updated = await Movie.findOneAndUpdate(
-            query,
-            {
-                $inc: { ratingSum: value, ratingCount: 1 }
-            },
-            { new: true }
-        );
-
-        if (!updated) return res.status(404).json({ error: 'Film not found' });
-
-        res.json({
-            success: true,
-            ratingSum: updated.ratingSum,
-            ratingCount: updated.ratingCount
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to save rating' });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // GET /api/requests - Export Requests as CSV
@@ -299,130 +214,15 @@ app.get('/api/requests', (req, res) => {
 });
 
 // POST /api/import - Bulk Import & Fulfill
+// POST /api/import - FROZEN
 app.post('/api/import', requireAdmin, async (req, res) => {
-    try {
-        let imports = req.body;
-
-        // Handle raw CSV string if sent
-        if (req.body.csv) {
-            const lines = req.body.csv.split('\n').filter(l => l.trim());
-            imports = lines.map(line => {
-                const cols = line.split(';');
-                if (cols.length < 1) return null;
-                return {
-                    title: cols[0]?.trim(),
-                    original: cols[1]?.trim(),
-                    year: cols[2]?.trim(),
-                    director: cols[3]?.trim(),
-                    letterboxd: cols[4]?.trim(),
-                    drive: cols[5]?.trim(),
-                    download: cols[6]?.trim()
-                };
-            }).filter(Boolean);
-        }
-
-        if (!Array.isArray(imports)) return res.status(400).json({ error: 'Array required' });
-
-        const results = {
-            total: imports.length,
-            success: 0,
-            failed: 0,
-            errors: []
-        };
-
-        const operations = [];
-        const fulfilledTitles = [];
-
-        // Validate and Prepare
-        imports.forEach((f, idx) => {
-            const rowNum = idx + 1;
-            if (!f.title) {
-                results.failed++;
-                results.errors.push(`Row ${rowNum}: Missing 'title'`);
-                return;
-            }
-
-            const doc = { ...f, __id: generateId(f) };
-            operations.push({ insertOne: { document: doc } });
-            fulfilledTitles.push(f.title.toLowerCase());
-        });
-
-        if (operations.length > 0) {
-            try {
-                const bulkRes = await Movie.bulkWrite(operations, { ordered: false });
-                results.success = bulkRes.insertedCount;
-
-                // FULFILLMENT LOGIC: Remove from requests.json
-                const reqPath = path.join(__dirname, 'data', 'requests.json');
-                if (fs.existsSync(reqPath)) {
-                    let pending = JSON.parse(fs.readFileSync(reqPath, 'utf8'));
-                    const originalCount = pending.length;
-                    // Filter out requests that match imported titles
-                    pending = pending.filter(p => !fulfilledTitles.includes(p.title.toLowerCase()));
-
-                    if (pending.length < originalCount) {
-                        fs.writeFileSync(reqPath, JSON.stringify(pending, null, 2));
-                        console.log(`🧹 Creating fulfillment: Removed ${originalCount - pending.length} fulfilled requests.`);
-                    }
-                }
-
-            } catch (bulkError) {
-                if (bulkError.writeErrors) {
-                    results.success = bulkError.result.insertedCount;
-                    results.failed += bulkError.writeErrors.length;
-                    bulkError.writeErrors.forEach(we => {
-                        results.errors.push(`Row ? (Duplicate/Error): ${we.errmsg}`);
-                    });
-                }
-            }
-        }
-
-        res.json(results);
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Import failed: ' + err.message });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // POST /api/request - User Request Film
+// POST /api/request - FROZEN
 app.post('/api/request', async (req, res) => {
-    try {
-        const { title } = req.body;
-        if (!title || typeof title !== 'string' || !title.trim()) {
-            return res.status(400).json({ error: 'Title is required' });
-        }
-
-        const requestData = {
-            title: title.trim(),
-            date: new Date().toISOString(),
-            ip: req.ip
-        };
-
-        const filePath = path.join(__dirname, 'data', 'requests.json');
-        let currentRequests = [];
-
-        // Read existing
-        if (fs.existsSync(filePath)) {
-            try {
-                const raw = fs.readFileSync(filePath, 'utf8');
-                currentRequests = JSON.parse(raw);
-            } catch (e) {
-                // Ignore corrupt file, start fresh
-                currentRequests = [];
-            }
-        }
-
-        currentRequests.push(requestData);
-
-        // Save back
-        fs.writeFileSync(filePath, JSON.stringify(currentRequests, null, 2));
-
-        res.json({ success: true, message: 'Request saved' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to save request' });
-    }
+    res.status(403).json({ error: 'Migration in progress. V1 is Read-Only.' });
 });
 
 // (Report API routes moved to top of file)
