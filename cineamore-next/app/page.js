@@ -4,23 +4,32 @@ import MovieGrid from '@/components/MovieGrid';
 
 // Server Component
 export default async function Home() {
-  await dbConnect();
+  let serializedMovies = [];
 
-  // FETCH STRATEGY: 
-  // For V1 parity (instant search), we fetch all lightweight projection.
-  // In V3 (infinite scale), we would paginate server-side.
-  const movies = await Movie.find({})
-    .select('title year director ratingSum ratingCount __id addedAt') // Lean projection
-    .sort({ addedAt: -1 })
-    .lean();
+  try {
+    await dbConnect();
+    const movies = await Movie.find({})
+      .select('title year director ratingSum ratingCount __id addedAt')
+      .sort({ addedAt: -1 })
+      .lean();
 
-  // Serialization Hack for Mongo _id to String
-  const serializedMovies = movies.map(doc => {
-    const d = { ...doc };
-    d._id = d._id.toString();
-    if (d.addedAt) d.addedAt = d.addedAt.toISOString();
-    return d;
-  });
+    serializedMovies = movies.map(doc => {
+      const d = { ...doc };
+      d._id = d._id.toString();
+      if (d.addedAt) d.addedAt = d.addedAt.toISOString();
+      return d;
+    });
+  } catch (error) {
+    console.warn('⚠️ Database connection failed or missing. Using Static Fallback.');
+    // Lazy load JSON to avoid build-time errors if file missing
+    try {
+      const staticData = require('../lib/movies.json');
+      serializedMovies = staticData;
+    } catch (e) {
+      console.error('❌ Static fallback failed:', e);
+      serializedMovies = [];
+    }
+  }
 
   return (
     <main className="min-h-screen p-8 max-w-[1600px] mx-auto">

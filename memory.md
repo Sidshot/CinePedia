@@ -14,6 +14,18 @@
 ## 🐛 Active Bugs
 *   *None known.* (V2 is parallel, V1 is stable).
 *   **Resolved:** V2 Dynamic Routing 404s fixed by correcting directory structure.
+*   **Resolved:** Tool execution hung during verification finalization (2025-12-16). Resume successful.
+*   **CRITICAL (2025-12-16):** MongoDB Atlas Auth Failure.
+    *   **Context:** Deployment Setup.
+    *   **Error:** `MongoServerError: bad auth : authentication failed` (Code 8000).
+    *   **Attempts:**
+        *   User `admin` with multiple password resets.
+        *   User `temp` / `passthegate`.
+        *   IP Whitelist confirmed (`0.0.0.0/0` active).
+        *   Connection String verified with `authSource=admin`.
+        *   Native `mongodb` driver verification failed (isolating Mongoose).
+    *   **Conclusion:** Environment/IP propagation issue or Atlas-specific deadlock.
+    *   **Action:** Pivoted to **Static JSON Bundle** to unblock deployment.
 
 ## ✅ Recent Actions
 1.  **Phase 1 Complete:** Migrated identity to `ObjectId` (2446 films).
@@ -22,6 +34,7 @@
 4.  **Parity Verified:** V2 matches V1 core functionality (Browse + Details).
 5.  **Secure:** Implemented Master Password Auth for V2 Admin routes.
 6.  **Crud Complete:** Phase 2.3 (Add/Edit/Delete) implemented with verified Server Actions.
+7.  **Local Verified:** Full V2/Next.js verification pass (Build, Search, Admin CRUD) passed on localhost:3002.
 
 ## ⏭️ Immediate Next Steps
 1.  **Phase 1 Migration:** Create `migration_v1_identity.js` to assign stable `_id` (UUID/ObjectId) to all films.

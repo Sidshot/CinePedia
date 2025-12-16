@@ -3,9 +3,8 @@ import mongoose from 'mongoose';
 const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    throw new Error(
-        'Please define the MONGODB_URI environment variable inside .env.local'
-    );
+    // In static mode, we just return null or log a warning instead of crashing
+    console.warn('⚠️ MONGODB_URI missing. App will run in Static Read-Only mode.');
 }
 
 /**
