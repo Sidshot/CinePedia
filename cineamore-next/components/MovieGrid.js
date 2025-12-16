@@ -152,11 +152,17 @@ export default function MovieGrid({ initialMovies, currentPage = 1, totalPages =
                                 <a
                                     href={movie.downloadLinks?.length > 0 ? movie.downloadLinks[0].url : '#'}
                                     target="_blank"
+                                    rel="noopener noreferrer"
                                     className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${movie.downloadLinks?.length > 0
                                         ? 'bg-[#3dffb8]/10 text-[#3dffb8] border border-[#3dffb8]/20 hover:bg-[#3dffb8]/20'
                                         : 'opacity-30 cursor-not-allowed bg-white/5'
                                         }`}
-                                    onClick={(e) => { if (!movie.downloadLinks?.length) e.preventDefault(); e.stopPropagation(); }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (!movie.downloadLinks?.length) {
+                                            e.preventDefault();
+                                        }
+                                    }}
                                 >
                                     <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
                                     Download
@@ -167,8 +173,9 @@ export default function MovieGrid({ initialMovies, currentPage = 1, totalPages =
                                     <a
                                         href={lbLink}
                                         target="_blank"
+                                        rel="noopener noreferrer"
                                         className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold bg-[#ffc043]/10 text-[#ffc043] border border-[#ffc043]/20 hover:bg-[#ffc043]/20 transition-all"
-                                        onClick={(e) => { e.stopPropagation(); }}
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z" /></svg>
                                         Letterboxd
