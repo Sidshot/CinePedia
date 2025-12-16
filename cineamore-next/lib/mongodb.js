@@ -19,6 +19,11 @@ if (!cached) {
 }
 
 async function dbConnect() {
+    // STATIC MODE: If no URI, return null immediately
+    if (!MONGODB_URI) {
+        return null;
+    }
+
     if (cached.conn) {
         return cached.conn;
     }

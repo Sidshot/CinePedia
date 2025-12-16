@@ -6,6 +6,17 @@ import SearchBar from '@/components/SearchBar';
 import Link from 'next/link';
 
 export default async function AdminDashboard({ searchParams }) {
+    // STATIC MODE GUARD: If no DB, render maintenance view
+    if (!process.env.MONGODB_URI) {
+        return (
+            <main className="min-h-screen p-8 text-center flex flex-col items-center justify-center">
+                <h1 className="text-3xl font-bold text-[var(--fg)] mb-4">Admin Dashboard Unavailable</h1>
+                <p className="text-[var(--muted)]">Admin features are disabled in Static Preview mode.</p>
+                <Link href="/" className="mt-8 text-[var(--accent)] hover:underline">Return Home</Link>
+            </main>
+        );
+    }
+
     await dbConnect();
     const query = (await searchParams)?.q || '';
 
