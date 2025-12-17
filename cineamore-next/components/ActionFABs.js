@@ -13,7 +13,6 @@ export default function ActionFABs() {
         const title = prompt("Search for your film? 🎬\nEnter the name of the movie you'd like to request:");
         if (!title || title.trim() === "") return;
 
-        console.log("Submitting Request:", title); // Debug
         try {
             const res = await fetch('/api/request', {
                 method: 'POST',
@@ -22,7 +21,6 @@ export default function ActionFABs() {
             });
 
             const data = await res.json();
-            console.log("Request Response:", data); // Debug
 
             if (res.ok) {
                 alert(`Request received: "${title}"\nWe'll look into it!`);
@@ -46,7 +44,6 @@ export default function ActionFABs() {
         if (!reportMsg.trim()) return;
 
         setIsSubmitting(true);
-        console.log("Submitting Report:", { name: reportName, msg: reportMsg }); // Debug
 
         try {
             const res = await fetch('/api/report', {
@@ -85,25 +82,23 @@ export default function ActionFABs() {
 
     return (
         <>
-            <div className="fixed bottom-6 right-6 flex flex-col gap-4 z-50">
-                {/* Request FAB (Glossy iOS Style) */}
+            <div className="fixed bottom-6 right-6 flex flex-col gap-4 z-50 items-end">
+                {/* Request FAB (Glossy Orange Pill) */}
                 <button
                     onClick={handleRequest}
-                    className="group relative flex items-center justify-center w-14 h-14 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:scale-110 hover:bg-white/20 transition-all duration-300"
-                    title="Request Film"
+                    className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-full backdrop-blur-2xl bg-gradient-to-r from-orange-500/85 to-amber-500/85 border border-white/30 shadow-[0_8px_32px_rgba(249,115,22,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] hover:scale-105 hover:bg-orange-500/95 transition-all duration-300 ring-1 ring-white/20"
                 >
-                    <span className="text-2xl drop-shadow-md">🎬</span>
-                    <span className="absolute right-16 backdrop-blur-md bg-black/60 border border-white/10 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">Request Film</span>
+                    <span className="text-xl drop-shadow-md">⦿</span>
+                    <span className="text-sm tracking-wide font-bold text-white drop-shadow-sm">Request Film</span>
                 </button>
 
-                {/* Report FAB (Glossy Red/Warning Style) */}
+                {/* Report FAB (Glossy Red/Pink Pill) */}
                 <button
                     onClick={() => setShowReportModal(true)}
-                    className="group relative flex items-center justify-center w-14 h-14 rounded-full backdrop-blur-xl bg-red-500/10 border border-red-500/30 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:scale-110 hover:bg-red-500/20 transition-all duration-300"
-                    title="Report Issue"
+                    className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-full backdrop-blur-2xl bg-gradient-to-r from-red-500/85 to-pink-500/85 border border-white/30 shadow-[0_8px_32px_rgba(239,68,68,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] hover:scale-105 hover:bg-red-500/95 transition-all duration-300 ring-1 ring-white/20"
                 >
-                    <span className="text-2xl drop-shadow-md">🚨</span>
-                    <span className="absolute right-16 backdrop-blur-md bg-black/60 border border-white/10 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">Report Issue</span>
+                    <span className="text-xl drop-shadow-md">🗨</span>
+                    <span className="text-sm tracking-wide font-bold text-white drop-shadow-sm">Report Issue</span>
                 </button>
             </div>
 

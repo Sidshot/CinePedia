@@ -35,8 +35,8 @@ export default function OptimizedPoster({
             <Image
                 src={imageUrl}
                 alt={`${title} (${year}) poster`}
-                width={width}
-                height={height}
+                fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
                 className={`object-cover transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setLoaded(true)}
                 onError={() => {

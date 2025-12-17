@@ -8,7 +8,29 @@
 *   **Database:** MongoDB Atlas (`cluster0.lallguq.mongodb.net/cinepedia`)
 *   **Last Commit:** `9199629` - Download button fallback fix
 
-## 📅 Session Log: 2025-12-17 (Afternoon) - Production Setup
+## � THE COMMANDMENTS (WORD OF GOD)
+**V2 IS LIVE. FAILURE IS NOT AN OPTION.**
+
+### 🛑 Deployment Protocol (STRICT)
+**The Golden Workflow:**
+1.  **Branch:** ALWAYS create a new branch for features/fixes (e.g., `feat/user-lists`, `fix/login`).
+2.  **Work:** Implement changes on the branch.
+3.  **Localhost:** Verify EVERYTHING on `localhost:3000` (or `3002`).
+    *   *Does it build?*
+    *   *Do features work?*
+    *   *Are there typos?*
+4.  **Loop:** If issues found -> Fix on Branch -> Re-test.
+5.  **Merge:** ONLY when 100% stable, merge to `main` and push.
+
+**NEVER** push code to `main` without establishing a **Task Boundary** and asking the following **Explicit Questions**:
+1.  *"Did you run the codes locally?"*
+2.  *"Are all bugs squashed?"*
+
+**Only upon User Confirmation (YES) may you proceed to push.**
+*   **Exception:** Emergency Hotfixes (Must still be verified locally).
+*   **Rule:** If in doubt, **DO NOT PUSH.**
+
+## �📅 Session Log: 2025-12-17 (Afternoon) - Production Setup
 ### ✅ Completed
 1.  **Google OAuth Production Setup:**
     *   Added redirect URI: `https://cineamore.vercel.app/api/auth/callback/google`
@@ -24,6 +46,7 @@
 3.  **Download Button Regression Fix:**
     *   Updated `MovieGrid.js` to fall back to legacy `dl`/`drive` fields
     *   Issue: migrated data uses old fields, not `downloadLinks` array
+    *   **Legacy Site Redirect:** Injected hard redirect into `public/index.html` to funnel `onrender.com` traffic to Vercel.
 
 ### 🔑 Production Environment Variables (Vercel)
 | Variable | Purpose |
@@ -57,10 +80,54 @@
 *   **Update Rule:** Always update `TipsManager.updates` in `app.js` with user-friendly, hype-driven changelogs (no tech jargon) before every deployment.
 *   **Pre-Flight:** Review `memory.md` for clean code/context before pushing.
 
-## 🛡️ Failsafe Protocol (Nuclear Doomsday)
+## �️ Legacy V1 System Documentation (Archive)
+**Status:** Deprecated (Redirecting to V2).
+**Last Stable State:** Commit `3dab7f0` (Before Redirect Overlay).
+**Backup Branch:** `backup/pre-v2-migration`
+
+### 🏗️ V1 Architecture
+*   **Type:** Node.js Monolith (Express.js).
+*   **Entry Point:** `server.js` (Root).
+*   **Frontend:** Vanilla JS (`public/js/app.js`) + HTML (`public/index.html`).
+*   **Styling:** CSS Variables (`public/css/style.css`).
+*   **Database:** MongoDB (Local or Atlas) + Local JSON Fallback (`data/cinepedia.data.json`).
+
+### ⚙️ V1 Core Mechanics
+1.  **Identity Engine:**
+    *   Uses `__id` (Double Underscore) generated from `SHA-256(Title|Year|Director)`.
+    *   **CRITICAL:** V1 relies entirely on this hash for routing. Do NOT mix with V2 `_id`.
+2.  **Data Persistence:**
+    *   **Read:** Queries MongoDB first.
+    *   **Seed:** If DB empty, auto-seeds from `data/cinepedia.data.json`.
+    *   **Write:** Admin actions update MongoDB *and* (formerly) attempted to write to JSON (deprecated).
+3.  **Authentication:**
+    *   **Method:** Shared Password (Env: `ADMIN_PASSWORD`).
+    *   **Mechanism:** Client sends `x-admin-pass` header.
+
+### 🔄 How to Resurrect V1 (Emergency Protocol)
+If V2 fails catastrophicall and you need the "Old Viral Site" back:
+
+1.  **Checkout Backup:**
+    ```bash
+    git checkout backup/pre-v2-migration
+    ```
+2.  **Restore Render Config:**
+    *   **Root Directory:** `.` (Current directory)
+    *   **Build Command:** `npm install`
+    *   **Start Command:** `node server.js`
+3.  **Environment Variables (Render):**
+    *   `MONGO_URI`: (Must point to a valid Atlas Cluster)
+    *   `ADMIN_PASSWORD`: (Your shared password)
+4.  **Verify:**
+    *   Ensure `server.js` is running.
+    *   Ensure `auto-seed` log appears if DB is fresh.
+
+---
+
+## �🛡️ Failsafe Protocol (Nuclear Doomsday)
 1.  **Backup Location:** Branch `backup/pre-v2-migration` (Contains the "Golden" state of V1).
 2.  **Restore:** If V2 fails, `git checkout backup/pre-v2-migration` and re-deploy.
-3.  **V1 Status:** **FROZEN (Read-Only).** Writes disabled in `server.js`.
+3.  **V1 Status:** **FROZEN (Read-Only).** Writes disabled in `server.js` (in current `main` branch).
 
 ## 🔐 Auth Strategy (Soft Internal)
 *   **Model:** Lightweight Admin / Shared Password.

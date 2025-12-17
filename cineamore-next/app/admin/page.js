@@ -43,7 +43,24 @@ export default async function AdminDashboard({ searchParams }) {
                     <p className="text-[var(--muted)]">Manage your Infinite Cinema catalogue.</p>
                 </div>
 
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-4 items-center flex-wrap justify-end">
+                    <div className="flex gap-2">
+                        <a
+                            href="/api/export/requests"
+                            target="_blank"
+                            className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 font-bold px-4 py-2 rounded-xl transition text-sm flex items-center gap-2"
+                        >
+                            <span>📥</span> Requests
+                        </a>
+                        <a
+                            href="/api/export/reports"
+                            target="_blank"
+                            className="bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 font-bold px-4 py-2 rounded-xl transition text-sm flex items-center gap-2"
+                        >
+                            <span>📥</span> Reports
+                        </a>
+                    </div>
+
                     <Link
                         href="/admin/add"
                         className="bg-[var(--accent)] hover:brightness-110 text-[var(--bg)] font-bold px-6 py-2 rounded-xl transition shadow-[0_0_10px_rgba(var(--accent-rgb),0.3)]"
