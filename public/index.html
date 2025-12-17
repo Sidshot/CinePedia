@@ -26,25 +26,36 @@
 <body>
 
   <!-- MIGRATION OVERLAY (Added by Admin) -->
-  <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:sans-serif;text-align:center;padding:20px;">
+  <div
+    style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:99999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:sans-serif;text-align:center;padding:20px;">
     <h1 style="font-size:3rem;margin-bottom:1rem;">We've Moved! 🚀</h1>
     <p style="font-size:1.5rem;margin-bottom:2rem;max-width:600px;line-height:1.4;">
       CineAmore has migrated to a new, faster home with more features.
       <br><br>
       Redirecting you in <span id="redir-timer">5</span> seconds...
     </p>
-    <a href="https://cineamore.vercel.app" style="background:#fff;color:#000;padding:15px 30px;border-radius:30px;text-decoration:none;font-weight:bold;font-size:1.2rem;transition:transform 0.2s;">
+    <a href="https://cineamore.vercel.app"
+      style="background:#fff;color:#000;padding:15px 30px;border-radius:30px;text-decoration:none;font-weight:bold;font-size:1.2rem;transition:transform 0.2s; margin-bottom: 20px;">
       Go to New Site Now
+    </a>
+
+    <a href="https://t.me/cineamore" target="_blank"
+      style="display:flex;align-items:center;gap:8px;background:rgba(0,136,204,0.2);border:1px solid #0088cc;color:#0088cc;padding:10px 20px;border-radius:20px;text-decoration:none;font-size:1rem;font-weight:500;transition:all 0.2s;">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.4-1.08.39-.35-.01-1.03-.2-1.54-.35-.62-.18-1.12-.28-1.07-.59.02-.16.24-.31.65-.48 2.56-1.11 4.27-1.84 5.13-2.2 2.44-1.02 2.94-1.2 3.28-1.2.07 0 .24.01.35.1.09.07.12.17.13.25 0 .02.01.07 0 .1z" />
+      </svg>
+      Join Updates on Telegram
     </a>
     <script>
       let count = 5;
       const el = document.getElementById('redir-timer');
       const interval = setInterval(() => {
         count--;
-        if(el) el.innerText = count > 0 ? count : 0;
-        if(count <= 0) {
-            clearInterval(interval);
-            window.location.href = "https://cineamore.vercel.app";
+        if (el) el.innerText = count > 0 ? count : 0;
+        if (count <= 0) {
+          clearInterval(interval);
+          window.location.href = "https://cineamore.vercel.app";
         }
       }, 1000);
       // Fallback
