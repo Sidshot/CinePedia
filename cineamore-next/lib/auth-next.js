@@ -7,6 +7,10 @@ import User from "@/models/User"
 export const { handlers, signIn, signOut, auth } = NextAuth({
     secret: process.env.AUTH_SECRET,
     trustHost: true, // Required for Vercel deployment
+    session: {
+        strategy: "jwt", // Use JWT for serverless compatibility
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -43,22 +47,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return true;
         },
-        async session({ session, token }) {
-            // Attach role to session from DB
-            await dbConnect();
-            const dbUser = await User.findOne({ email: session.user.email }).lean();
-            if (dbUser) {
-                session.user.id = dbUser._id.toString();
-                session.user.role = dbUser.role;
-                session.user.isAdmin = isAdmin(dbUser.email);
-            }
-            return session;
-        },
-        async jwt({ token, user }) {
+        async jwt({ token, user, account }) {
+            // Persist user info in the token on initial sign-in
             if (user) {
-                token.role = user.role;
+                token.id = user.id;
+                token.email = user.email;
+                token.name = user.name;
+                token.picture = user.image;
             }
             return token;
+        },
+        async session({ session, token }) {
+            // Pass token data to session (no DB call needed for basic session)
+            if (token) {
+                session.user.id = token.id || token.sub;
+                session.user.email = token.email;
+                session.user.name = token.name;
+                session.user.image = token.picture;
+            }
+
+            // Optionally enrich with DB data (non-blocking)
+            try {
+                const db = await dbConnect();
+                if (db) {
+                    const dbUser = await User.findOne({ email: session.user.email }).lean();
+                    if (dbUser) {
+                        session.user.id = dbUser._id.toString();
+                        session.user.role = dbUser.role;
+                        session.user.isAdmin = isAdmin(dbUser.email);
+                    }
+                }
+            } catch (error) {
+                console.warn("⚠️ Could not enrich session from DB:", error.message);
+            }
+
+            return session;
         }
     },
     pages: {
