@@ -6,6 +6,7 @@ import User from "@/models/User"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     secret: process.env.AUTH_SECRET,
+    trustHost: true, // Required for Vercel deployment
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -15,22 +16,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         async signIn({ user, account, profile }) {
             if (account.provider === "google") {
-                await dbConnect();
                 try {
-                    const existingUser = await User.findOne({ email: user.email });
-                    if (!existingUser) {
-                        await User.create({
-                            name: user.name,
-                            email: user.email,
-                            image: user.image,
-                            role: 'user', // Default role
-                        });
+                    const db = await dbConnect();
+                    if (db) {
+                        const existingUser = await User.findOne({ email: user.email });
+                        if (!existingUser) {
+                            await User.create({
+                                name: user.name,
+                                email: user.email,
+                                image: user.image,
+                                role: 'user', // Default role
+                            });
+                            console.log("✅ New user created:", user.email);
+                        } else {
+                            console.log("✅ Existing user signed in:", user.email);
+                        }
+                    } else {
+                        console.warn("⚠️ DB not connected, skipping user save");
                     }
-                    return true;
                 } catch (error) {
-                    console.error("Error saving user:", error);
-                    return false;
+                    // Log the error but DON'T block sign-in
+                    console.error("⚠️ Error saving user (non-blocking):", error.message);
                 }
+                // Always allow sign-in even if DB fails
+                return true;
             }
             return true;
         },
