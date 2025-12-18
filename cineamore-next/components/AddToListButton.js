@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition, useRef } from 'react';
 import Link from 'next/link';
 import { checkAuthStatus, quickAddToList, getUserLists, addMovieToList, getListsContainingMovie } from '@/lib/list-actions';
+import { handleSignIn } from '@/lib/auth-actions';
 
 /**
  * AddToListButton - A dropdown button for adding movies to user lists
@@ -152,8 +153,8 @@ export default function AddToListButton({ movieId, movieTitle, variant = 'icon' 
                     {!isLoggedIn ? (
                         <div className="p-4 text-center">
                             <p className="text-sm text-[var(--muted)] mb-3">Sign in to save movies</p>
-                            <Link
-                                href="/api/auth/signin/google"
+                            <button
+                                onClick={() => handleSignIn()}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -163,7 +164,7 @@ export default function AddToListButton({ movieId, movieTitle, variant = 'icon' 
                                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                 </svg>
                                 Sign in with Google
-                            </Link>
+                            </button>
                         </div>
                     ) : (
                         <>
