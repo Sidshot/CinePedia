@@ -27,6 +27,7 @@ export default async function Home({ searchParams }) {
   let heroMovies = [];
   let allGenres = [];
   let recentlyAdded = []; // NEW: Films from last import
+  let isOffline = false;
 
   try {
     if (process.env.MONGODB_URI) {
@@ -150,6 +151,7 @@ export default async function Home({ searchParams }) {
     }
   } catch (error) {
     console.warn('⚠️ Database connection failed or missing. Using Static Fallback.', error.message);
+    isOffline = true;
     // Fallback: paginate static data
     let filteredStatic = staticData;
     const perPage = MOVIES_PER_PAGE;
@@ -211,6 +213,12 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen p-8 pb-32 max-w-[1600px] mx-auto">
+      {isOffline && (
+        <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200 text-center font-bold flex items-center justify-center gap-2">
+          <span>⚠️</span>
+          <span>Database connection failed. Viewing offline copy.</span>
+        </div>
+      )}
       {/* Client Hero handling Randomization (only on page 1 and no search active) */}
       {currentPage === 1 && !searchQuery && <Hero movies={heroMovies.length > 0 ? heroMovies : serializedMovies.slice(0, 10)} />}
 
