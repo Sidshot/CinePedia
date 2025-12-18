@@ -5,6 +5,7 @@ import staticData from '@/lib/movies.json';
 import Hero from '@/components/Hero';
 import ActionFABs from '@/components/ActionFABs';
 import { getProxyUrl } from '@/lib/image-proxy';
+import OptimizedPoster from '@/components/OptimizedPoster';
 
 // Pagination config
 const MOVIES_PER_PAGE = 48;
@@ -129,7 +130,6 @@ export default async function Home({ searchParams }) {
       if (currentPage === 1 && !searchQuery && !currentGenre) {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const recentMovies = await Movie.find({ addedAt: { $gte: oneDayAgo } })
-          .select('title year director __id addedAt poster downloadLinks genre')
           .sort({ addedAt: -1 })
           .limit(20)
           .lean();
@@ -228,17 +228,13 @@ export default async function Home({ searchParams }) {
                 className="group bg-[var(--card-bg)] rounded-xl overflow-hidden border border-[var(--border)] hover:border-[var(--accent)] transition-all hover:scale-[1.02]"
               >
                 <div className="aspect-[2/3] bg-[var(--card-bg)] relative flex items-center justify-center">
-                  {movie.poster ? (
-                    <img
-                      src={getProxyUrl(movie.poster)}
-                      alt={movie.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="text-4xl opacity-30">🎬</span>
-                  )}
-                  <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow">
+                  <OptimizedPoster
+                    src={movie.poster}
+                    title={movie.title}
+                    year={movie.year}
+                    className="w-full h-full"
+                  />
+                  <div className="absolute top-2 right-2 z-10 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow">
                     NEW
                   </div>
                 </div>
