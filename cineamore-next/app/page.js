@@ -66,7 +66,7 @@ export default async function Home({ searchParams }) {
       }
 
       // Pagination
-      const perPage = currentGenre ? 50 : MOVIES_PER_PAGE;
+      const perPage = MOVIES_PER_PAGE; // Strictly 48 per spec
       const skip = (currentPage - 1) * perPage;
 
       totalCount = await Movie.countDocuments(query);

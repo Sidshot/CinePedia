@@ -34,6 +34,11 @@ const MovieSchema = new mongoose.Schema({
     addedAt: { type: Date, default: Date.now }
 });
 
+// Indexes for homepage performance
+MovieSchema.index({ addedAt: -1 });
+MovieSchema.index({ year: -1 });
+MovieSchema.index({ title: 'text', director: 'text' }); // Optimized text search
+
 
 
 // FORCE REFRESH: Delete the stale model from Mongoose cache to ensure new schema fields (genre) are recognized
