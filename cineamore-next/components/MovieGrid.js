@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchBar from './SearchBar';
@@ -11,20 +11,24 @@ import AddToListButton from './AddToListButton';
 const PRIORITY_GENRES = ['Mystery', 'Horror', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Comedy', 'Romance'];
 const DEFAULT_VISIBLE_COUNT = 8;
 
-export default function MovieGrid({ initialMovies, allGenres = [], currentPage = 1, totalPages = 1, totalCount = 0, currentGenre = null }) {
+export default function MovieGrid({
+    initialMovies,
+    allGenres = [],
+    currentPage = 1,
+    totalPages = 1,
+    totalCount = 0,
+    currentGenre = null,
+    currentSearch = '',
+    currentSort = 'newest'
+}) {
     const router = useRouter();
-    const [query, setQuery] = useState('');
-    const [filterYear, setFilterYear] = useState('all');
     const [showAllGenres, setShowAllGenres] = useState(false);
 
     // Sort genres: priority first, then alphabetical
     const sortedGenres = useMemo(() => {
-        const prioritySet = new Set(PRIORITY_GENRES.map(g => g.toLowerCase()));
         const sorted = [...allGenres].sort((a, b) => {
-            const aLower = a.toLowerCase();
-            const bLower = b.toLowerCase();
-            const aIndex = PRIORITY_GENRES.findIndex(p => p.toLowerCase() === aLower);
-            const bIndex = PRIORITY_GENRES.findIndex(p => p.toLowerCase() === bLower);
+            const aIndex = PRIORITY_GENRES.findIndex(p => p.toLowerCase() === a.toLowerCase());
+            const bIndex = PRIORITY_GENRES.findIndex(p => p.toLowerCase() === b.toLowerCase());
 
             if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
             if (aIndex !== -1) return -1;
@@ -37,56 +41,45 @@ export default function MovieGrid({ initialMovies, allGenres = [], currentPage =
     const visibleGenres = showAllGenres ? sortedGenres : sortedGenres.slice(0, DEFAULT_VISIBLE_COUNT);
     const hasMoreGenres = sortedGenres.length > DEFAULT_VISIBLE_COUNT;
 
-    // Extract unique years for options
-    const years = useMemo(() => {
-        const y = initialMovies
-            .map(m => parseInt(m.year))
-            .filter(num => !isNaN(num)); // Valid numbers only
-        return [...new Set(y)].sort((a, b) => b - a);
-    }, [initialMovies]);
+    // Build URL with current filters
+    const buildUrl = useCallback((overrides = {}) => {
+        const params = new URLSearchParams();
 
-    // Filtering Logic (Client Side Text/Year - Genre is Server Side)
-    const filteredMovies = useMemo(() => {
-        let result = initialMovies;
+        const genre = overrides.genre !== undefined ? overrides.genre : currentGenre;
+        const search = overrides.search !== undefined ? overrides.search : currentSearch;
+        const sort = overrides.sort !== undefined ? overrides.sort : currentSort;
+        const page = overrides.page !== undefined ? overrides.page : 1; // Reset to page 1 on filter change
 
-        // Text Search (Title, Director, Year)
-        if (query) {
-            const lowQuery = query.toLowerCase();
-            result = result.filter(m =>
-                (m.title && m.title.toLowerCase().includes(lowQuery)) ||
-                (m.director && m.director.toLowerCase().includes(lowQuery)) ||
-                (m.year && m.year.toString().includes(lowQuery))
-            );
-        }
+        if (genre && genre !== 'all') params.set('genre', genre);
+        if (search && search.trim()) params.set('q', search.trim());
+        if (sort && sort !== 'newest') params.set('sort', sort);
+        if (page > 1) params.set('page', page.toString());
 
-        // Year Filter
-        if (filterYear !== 'all') {
-            result = result.filter(m => m.year === parseInt(filterYear));
-        }
+        const queryString = params.toString();
+        return queryString ? `/?${queryString}` : '/';
+    }, [currentGenre, currentSearch, currentSort]);
 
-        return result;
-    }, [initialMovies, query, filterYear]);
+    // Handle search submit (on Enter or explicit submit)
+    const handleSearch = useCallback((query) => {
+        router.push(buildUrl({ search: query, page: 1 }));
+    }, [router, buildUrl]);
+
+    // Handle sort change
+    const handleSortChange = useCallback((e) => {
+        router.push(buildUrl({ sort: e.target.value, page: 1 }));
+    }, [router, buildUrl]);
 
     // Handle Genre Click -> Navigation
-    const handleGenreClick = (genre) => {
-        if (genre === 'all') {
-            router.push('/');
-        } else {
-            router.push(`/?genre=${encodeURIComponent(genre)}`);
-        }
-    };
+    const handleGenreClick = useCallback((genre) => {
+        router.push(buildUrl({ genre: genre === 'all' ? null : genre, page: 1 }));
+    }, [router, buildUrl]);
 
     // Reusable Pagination Component
     const PaginationControls = () => {
         if (totalPages <= 1) return null;
 
-        // Construct base URL for pagination (preserve genre)
-        const getPageUrl = (page) => {
-            const params = new URLSearchParams();
-            if (currentGenre) params.set('genre', currentGenre);
-            params.set('page', page.toString());
-            return `/?${params.toString()}`;
-        };
+        // Use buildUrl to preserve all current filters
+        const getPageUrl = (page) => buildUrl({ page });
 
         return (
             <div className="flex justify-center items-center gap-4 py-6 border-t border-[var(--border)] mt-4">
@@ -130,7 +123,7 @@ export default function MovieGrid({ initialMovies, allGenres = [], currentPage =
 
                 {/* Search Bar */}
                 <div className="w-full xl:w-auto xl:min-w-[300px]">
-                    <SearchBar onSearch={setQuery} />
+                    <SearchBar onSearch={handleSearch} defaultValue={currentSearch} />
                 </div>
 
                 {/* Genre Filter Tiles - Centered & Flexible */}
@@ -162,25 +155,43 @@ export default function MovieGrid({ initialMovies, allGenres = [], currentPage =
                     </div>
                 )}
 
-                {/* Year Filter */}
+                {/* Sort Dropdown */}
                 <div className="flex gap-2 w-full xl:w-auto overflow-x-auto pb-2 xl:pb-0 justify-end">
                     <select
-                        value={filterYear}
-                        onChange={(e) => setFilterYear(e.target.value)}
-                        className="h-[42px] px-4 rounded-full bg-[rgba(255,255,255,0.05)] border border-[var(--border)] text-sm font-semibold focus:border-[var(--accent)] outline-none cursor-pointer hover:bg-white/10 transition-colors"
+                        value={currentSort}
+                        onChange={handleSortChange}
+                        className="h-[42px] px-4 rounded-full bg-[#1a1a1a] border border-[var(--border)] text-sm font-semibold text-[var(--fg)] focus:border-[var(--accent)] outline-none cursor-pointer hover:bg-[#252525] transition-colors"
+                        style={{ colorScheme: 'dark' }}
                     >
-                        <option value="all">Year: All</option>
-                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                        <option value="newest" className="bg-[#1a1a1a] text-[var(--fg)]">Recently Added</option>
+                        <option value="oldest" className="bg-[#1a1a1a] text-[var(--fg)]">Oldest Added</option>
+                        <option value="year-desc" className="bg-[#1a1a1a] text-[var(--fg)]">Year: New → Old</option>
+                        <option value="year-asc" className="bg-[#1a1a1a] text-[var(--fg)]">Year: Old → New</option>
                     </select>
                 </div>
             </div>
+
+            {/* Search Results Info */}
+            {currentSearch && (
+                <div className="mb-4 px-4 py-2 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-xl text-sm">
+                    <span className="text-[var(--muted)]">Search results for </span>
+                    <span className="font-bold text-[var(--accent)]">"{currentSearch}"</span>
+                    <span className="text-[var(--muted)]"> — {totalCount} films found</span>
+                    <button
+                        onClick={() => router.push('/')}
+                        className="ml-4 text-red-400 hover:text-red-300 font-semibold"
+                    >
+                        ✕ Clear
+                    </button>
+                </div>
+            )}
 
             {/* Top Pagination */}
             <PaginationControls />
 
             {/* Grid */}
             <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
-                {filteredMovies.map((movie) => {
+                {initialMovies.map((movie) => {
                     const lbLink = movie.letterboxd || movie.lb; // Support both keys
                     return (
                         <div key={movie._id || movie.__id} className="group relative flex flex-col h-full p-4 rounded-[var(--radius)] card-gloss transition-all hover:-translate-y-2 hover:shadow-2xl hover:border-white/20">
@@ -308,9 +319,12 @@ export default function MovieGrid({ initialMovies, allGenres = [], currentPage =
                 })}
             </div>
 
-            {filteredMovies.length === 0 && (
+            {initialMovies.length === 0 && (
                 <div className="py-20 text-center border border-dashed border-[var(--border)] rounded-3xl text-[var(--muted)]">
-                    No movies found matching your criteria.
+                    {currentSearch
+                        ? `No movies found matching "${currentSearch}"`
+                        : 'No movies found matching your criteria.'
+                    }
                 </div>
             )}
 

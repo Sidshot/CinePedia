@@ -1,18 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function SearchBar({ onSearch, placeholder = "Search..." }) {
-    const [query, setQuery] = useState('');
+export default function SearchBar({ onSearch, placeholder = "Search all films...", defaultValue = '' }) {
+    const [query, setQuery] = useState(defaultValue);
 
-    // Debounce effect
-    useEffect(() => {
-        const handler = setTimeout(() => {
+    // Submit on Enter key
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
             onSearch(query);
-        }, 300);
+        }
+    };
 
-        return () => clearTimeout(handler);
-    }, [query, onSearch]);
+    // Submit on blur (when user clicks away)
+    const handleBlur = () => {
+        if (query !== defaultValue) {
+            onSearch(query);
+        }
+    };
 
     return (
         <div className="relative w-full max-w-md">
@@ -27,7 +33,21 @@ export default function SearchBar({ onSearch, placeholder = "Search..." }) {
                 placeholder={placeholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
             />
+            {query && (
+                <button
+                    type="button"
+                    onClick={() => { setQuery(''); onSearch(''); }}
+                    className="absolute inset-y-0 right-3 flex items-center text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            )}
         </div>
     );
 }
+
