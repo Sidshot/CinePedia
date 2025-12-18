@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import InteractiveRating from '@/components/InteractiveRating';
+import AddToListButton from '@/components/AddToListButton';
 import { notFound } from 'next/navigation';
 import dbConnect from '@/lib/mongodb';
 import Movie from '@/models/Movie';
@@ -152,11 +153,18 @@ export default async function MoviePage({ params }) {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 py-6 border-y border-white/10 justify-center md:justify-start">
+                    <div className="flex gap-4 py-6 border-y border-white/10 justify-center md:justify-start items-center flex-wrap">
                         <InteractiveRating
                             movieId={movie._id || movie.__id}
                             initialSum={movie.ratingSum}
                             initialCount={movie.ratingCount}
+                        />
+
+                        {/* Save to List Button */}
+                        <AddToListButton
+                            movieId={movie._id || movie.__id}
+                            movieTitle={movie.title}
+                            variant="full"
                         />
                     </div>
 

@@ -199,9 +199,9 @@ export default function MovieGrid({ initialMovies, allGenres = [], currentPage =
                                     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                                 </Link>
 
-                                {/* Save Button - Top Right (Outside Link) */}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                    <AddToListButton movieId={movie._id || movie.__id} movieTitle={movie.title} variant="icon" />
+                                {/* Save Button - Top Right - Always Visible */}
+                                <div className="absolute top-3 right-3 z-10">
+                                    <AddToListButton movieId={movie._id || movie.__id} movieTitle={movie.title} variant="prominent" />
                                 </div>
                             </div>
 
