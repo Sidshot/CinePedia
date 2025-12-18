@@ -16,6 +16,7 @@ export default function BulkImportPage() {
     const [detectedFormat, setDetectedFormat] = useState(null);
     const [currentMovie, setCurrentMovie] = useState('');
     const [totalToProcess, setTotalToProcess] = useState(0);
+    const [importLog, setImportLog] = useState([]); // Live log of imports
 
     // Handle file drop
     const handleDrop = useCallback((e) => {
@@ -108,17 +109,51 @@ export default function BulkImportPage() {
         }
     };
 
-    // Import movies
+    // Import movies one-by-one with live progress
     const handleImport = async () => {
         setStep('importing');
         setProgress(0);
+        setImportLog([]);
 
         try {
             // Filter out duplicates and invalid entries
             const moviesToImport = enrichedMovies.filter(m => !m.isDuplicate);
+            setTotalToProcess(moviesToImport.length);
 
-            const result = await bulkImportMovies(moviesToImport);
+            const result = {
+                imported: 0,
+                skipped: 0,
+                errors: [],
+                details: []
+            };
+
+            // Import one by one for live progress
+            for (let i = 0; i < moviesToImport.length; i++) {
+                const movie = moviesToImport[i];
+                setCurrentMovie(movie.title);
+                setProgress(i + 1);
+
+                try {
+                    // Import single movie
+                    const singleResult = await bulkImportMovies([movie]);
+
+                    if (singleResult.imported > 0) {
+                        result.imported++;
+                        result.details.push({ title: movie.title, status: 'imported' });
+                        setImportLog(prev => [...prev.slice(-19), { title: movie.title, status: 'success' }]);
+                    } else if (singleResult.skipped > 0) {
+                        result.skipped++;
+                        result.details.push({ title: movie.title, status: 'skipped' });
+                        setImportLog(prev => [...prev.slice(-19), { title: movie.title, status: 'skipped' }]);
+                    }
+                } catch (e) {
+                    result.errors.push({ title: movie.title, error: e.message });
+                    setImportLog(prev => [...prev.slice(-19), { title: movie.title, status: 'error', error: e.message }]);
+                }
+            }
+
             setImportResult(result);
+            setCurrentMovie('');
             setStep('done');
         } catch (e) {
             setError(`Import failed: ${e.message}`);
@@ -390,13 +425,44 @@ Film 2 | http://...`}
 
             {/* Step 5: Importing */}
             {step === 'importing' && (
-                <div className="text-center py-12 max-w-lg mx-auto">
+                <div className="text-center py-8 max-w-2xl mx-auto">
                     <div className="text-6xl mb-4 animate-bounce">📥</div>
                     <h2 className="text-xl font-bold text-[var(--fg)] mb-2">Importing to Database...</h2>
-                    <p className="text-2xl font-bold text-green-400">
-                        {enrichedMovies.filter(m => !m.isDuplicate).length} movies
+
+                    {/* Progress Counter */}
+                    <p className="text-2xl font-bold text-green-400 mb-2">
+                        {progress} / {totalToProcess}
                     </p>
-                    <p className="text-[var(--muted)] text-sm mt-2">Please wait...</p>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-white/10 rounded-full h-3 mb-4 overflow-hidden">
+                        <div
+                            className="h-full bg-green-500 rounded-full transition-all duration-300"
+                            style={{ width: `${totalToProcess > 0 ? (progress / totalToProcess) * 100 : 0}%` }}
+                        />
+                    </div>
+
+                    {/* Current Movie */}
+                    <p className="text-[var(--accent)] font-medium truncate mb-4">
+                        {currentMovie ? `Adding: ${currentMovie}` : 'Preparing...'}
+                    </p>
+
+                    {/* Live Import Log */}
+                    {importLog.length > 0 && (
+                        <div className="bg-black/30 rounded-xl p-4 text-left max-h-48 overflow-y-auto">
+                            <p className="text-xs text-[var(--muted)] mb-2 font-semibold">Recent Activity:</p>
+                            <div className="space-y-1">
+                                {importLog.slice(-10).map((entry, i) => (
+                                    <div key={i} className="text-xs flex items-center gap-2">
+                                        {entry.status === 'success' && <span className="text-green-400">✓</span>}
+                                        {entry.status === 'skipped' && <span className="text-yellow-400">⊘</span>}
+                                        {entry.status === 'error' && <span className="text-red-400">✗</span>}
+                                        <span className="text-[var(--muted)] truncate">{entry.title}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
