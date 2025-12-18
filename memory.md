@@ -1,12 +1,112 @@
 # CineAmore Session Memory
-**Last Updated:** 2025-12-17 15:35 IST (Production OAuth + Atlas Migration Complete)
+**Last Updated:** 2025-12-18 18:40 IST (Bulk Import + Recently Added + Theme Fixes)
 
 ## 🟢 Current Status
 *   **Active Branch:** `main`
-*   **Mode:** `STABLE` (All bugs fixed)
+*   **Mode:** `DEPLOYED & LIVE`
 *   **Production URL:** https://cineamore.vercel.app
 *   **Database:** MongoDB Atlas (`cluster0.lallguq.mongodb.net/cinepedia`)
-*   **Last Commit:** `9199629` - Download button fallback fix
+*   **Pending:** 0 commits
+
+
+---
+
+## 📝 Session Log: 2025-12-18 (Bulk Import & UI Polish)
+**Goal**: Make bulk import foolproof, add Recently Added section, fix light/dark mode issues.
+
+### ✅ Features Completed
+
+#### 1. Smart Bulk Import System (`app/admin/import/`)
+*   **NEW FILE:** `lib/bulkImport.js` - Multi-format parsing (JSON, CSV, TXT)
+*   **NEW FILE:** `app/admin/import/page.js` - Complete import UI with:
+    *   File upload with drag & drop
+    *   Multi-format detection (JSON, CSV, TSV, TXT)
+    *   Validation preview (shows errors/warnings)
+    *   TMDB enrichment with progress bar
+    *   Duplicate checking before import
+*   **Smart CSV Parser Features:**
+    *   **Content-based column detection** - Analyzes data patterns instead of headers
+    *   Detects: URL columns, Year columns (1900-2100), Row numbers, Text fields
+    *   Works with ANY language headers (Spanish, Japanese, etc.)
+    *   Supports comma and tab separators
+    *   Skips decorative/metadata rows automatically
+*   **Validation Safeguards:**
+    *   Skips rows with numeric-only titles (row indices)
+    *   Validates URL format (http/https/common domains)
+    *   Year range check (1800-2100)
+    *   Title minimum length (2 chars)
+
+#### 2. Poster & Backdrop Backfill
+*   **NEW FILE:** `scripts/backfill-posters.mjs`
+*   **Fix:** `lib/bulkImport.js` now saves `poster` and `backdrop` from TMDB
+*   **Fix:** `lib/tmdb.js` now returns `backdropUrl` in addition to `posterUrl`
+*   **Backfill Results:** 2,474 movies updated with posters/backdrops
+
+#### 3. Recently Added Section (Homepage)
+*   **Modified:** `app/page.js`
+*   Shows movies added in last 24 hours
+*   6-column grid with "NEW" badges
+*   Theme-aware placeholder (🎬 icon) for missing posters
+*   Only visible on page 1 without search/genre filters
+
+#### 4. Default Sort Changed
+*   **Modified:** `app/page.js`
+*   Default: `year-desc` (newest films by year first)
+*   Was: `newest` (most recently added first)
+
+#### 5. Light/Dark Mode Theme Fixes
+*   **Fixed:** Sort dropdown (`components/MovieGrid.js`)
+    *   Changed `bg-[#1a1a1a]` → `bg-[var(--card-bg)]`
+*   **Fixed:** AddToListButton dropdown (`components/AddToListButton.js`)
+    *   Changed `bg-[#1a1a1a]` → `bg-[var(--bg)]`
+*   **Fixed:** CreateListForm modal (`app/lists/CreateListForm.js`)
+    *   Changed `bg-[#1a1a1a]` → `bg-[var(--bg)]`
+*   **Fixed:** MovieForm TMDB dropdown (`components/MovieForm.js`)
+    *   Changed `bg-[#1a1a1a]` → `bg-[var(--bg)]`
+
+#### 6. Cleanup Script
+*   **NEW FILE:** `scripts/cleanup-numeric-titles.mjs`
+*   Deleted 174 incorrectly imported movies (numeric titles from bad CSV parse)
+
+### 🐛 Bugs Fixed This Session
+
+| Bug | File | Fix |
+|-----|------|-----|
+| CSV import read wrong columns | `lib/bulkImport.js` | Smart content-based column detection |
+| Numeric titles imported | `lib/bulkImport.js` | Added `/^\d+$/` title filter |
+| No posters on import | `lib/bulkImport.js` | Added poster/backdrop to enrichment |
+| Missing backdrops in TMDB | `lib/tmdb.js` | Added `backdropUrl` to return object |
+| Sort dropdown dark in light mode | `MovieGrid.js` | Use `var(--card-bg)` |
+| Dropdowns dark in light mode | Multiple files | Use `var(--bg)` |
+| Async validation not awaited | `lib/bulkImport.js` | Added `Promise.all` for validateMovieEntry |
+
+### 📁 Files Changed (Unstaged)
+```
+Modified:
+- app/admin/page.js
+- app/lists/CreateListForm.js  
+- app/page.js
+- components/AddToListButton.js
+- components/MovieForm.js
+- components/MovieGrid.js
+- lib/tmdb.js
+
+New Files:
+- app/admin/import/ (full directory)
+- lib/bulkImport.js
+- scripts/backfill-posters.mjs
+- scripts/cleanup-numeric-titles.mjs
+```
+
+### ⚠️ Lessons Learned (This Session)
+1.  **CSV parsing is HARD** - Headers can be any language, columns can be in any order
+2.  **Content analysis > Header names** - Look at actual data patterns
+3.  **Always save images during import** - Poster/backdrop must be included in enrichment
+4.  **Theme variables everywhere** - Never use hardcoded colors like `#1a1a1a`
+5.  **Test with real data** - Sample CSV exposed many edge cases
+
+---
+
 
 ## � THE COMMANDMENTS (WORD OF GOD)
 **V2 IS LIVE. FAILURE IS NOT AN OPTION.**
@@ -391,3 +491,38 @@ These items are currently working but are fragile or unscalable. **Must be addre
     - **Hot Reload**: Fixed for Mongoose models.
     - **Date Handling**: Robust against invalid DB dates.
 - **Next Step**: READY for deployment to Production.
+
+---
+
+## 🛡️ "Foolproofing" Sprint (Completed Dec 2025)
+We paused feature development to harden the system against data corruption and operational error.
+
+### 1. Data Integrity (The "Clean Database" Promise)
+- **Schema:** `models/Movie.js` now strictly forbids legacy fields (`dl`, `drive`).
+- **Audit:** `scripts/audit-db.mjs` verifies 100% compliance.
+- **Migration:** All legacy records migrated to `downloadLinks` array.
+
+### 2. Write Safety (The "Circuit Breaker")
+- **Hard Caps:** Bulk Imports limited to **500 items** per session.
+- **Circuit Breakers:**
+  - Abort import if **>5% error rate**.
+  - Abort if **>10 consecutive errors**.
+- **Dry Runs:** All admin scripts summarize changes and require confirmation before executing.
+
+### 3. Deployment Guardrails (The "Gatekeeper")
+- **Mechanism:** `npm run build` is now prefixed with `node scripts/pre-deploy.mjs`.
+- **Checks:**
+  1.  **Environment:** Must have `MONGODB_URI`, `TMDB_API_KEY`, `AUTH_SECRET`.
+  2.  **Database:** Must pass `audit-db.mjs` (Zero invariant violations).
+- **Result:** It is impossible to deploy a broken schema or environment to Vercel.
+
+### 4. Observability
+- **Logger:** `lib/logger.js` outputs structured JSON logs.
+- **Coverage:** `CREATE`, `UPDATE`, `DELETE`, `BULK_IMPORT`, and `AUTH` events are audited.
+
+---
+
+## 🔑 Operational Invariants (New)
+*   **Images:** Always use `getProxyUrl` (never hotlink TMDB).
+*   **Imports:** Always check `bulkImport.js` logs if data looks weird.
+*   **Auth:** Admin rights are managed via `lib/auth-next.js` / ENV.

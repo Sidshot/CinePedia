@@ -175,7 +175,7 @@ export default function BulkImportPage() {
                     />
                     <div className="text-6xl mb-4">📁</div>
                     <h2 className="text-xl font-bold text-[var(--fg)] mb-2">Drop file here</h2>
-                    <p className="text-[var(--muted)]">Supports JSON, CSV, or TXT (one movie per line)</p>
+                    <p className="text-[var(--muted)]">Supports JSON, CSV, or TXT (Max 500 items)</p>
 
                     {/* Sample Formats */}
                     <div className="mt-8 grid md:grid-cols-3 gap-4 text-left max-w-4xl mx-auto">

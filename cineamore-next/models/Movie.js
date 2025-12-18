@@ -1,10 +1,24 @@
 import mongoose from 'mongoose';
 
 const MovieSchema = new mongoose.Schema({
-    __id: { type: String, required: true, unique: true }, // Legacy ID
-    title: { type: String, required: true },
+    __id: {
+        type: String,
+        required: true,
+        unique: true,
+        immutable: true // LEGACY ALIAS: Never allow this to change once set
+    },
+    title: {
+        type: String,
+        required: [true, 'Title is required'],
+        minlength: [1, 'Title must be at least 1 character'],
+        trim: true
+    },
     original: String,
-    year: Number,
+    year: {
+        type: Number,
+        min: [1880, 'Year must be after 1880'],
+        max: [2100, 'Year cannot be in the distant future']
+    },
     director: String,
     plot: String, // Plot Summary
     genre: { type: [String], default: [] }, // Genre Tags
@@ -17,8 +31,6 @@ const MovieSchema = new mongoose.Schema({
         url: String,
         addedAt: { type: Date, default: Date.now }
     }],
-    dl: String,   // Deprecated
-    drive: String, // Deprecated
     addedAt: { type: Date, default: Date.now }
 });
 

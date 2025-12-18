@@ -1,3 +1,5 @@
+import { getProxyUrl } from '@/lib/image-proxy';
+
 /**
  * Generates an optimized poster URL.
  * Supports an optional proxy (e.g. ImageKit) via NEXT_PUBLIC_IMAGE_PROXY.
@@ -8,7 +10,7 @@
  * @returns {string} Fully qualified image URL
  */
 export function getPosterUrl(title, year, existingUrl) {
-    if (existingUrl && existingUrl.length > 5) return existingUrl;
+    if (existingUrl && existingUrl.length > 5) return getProxyUrl(existingUrl);
 
     const bingUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${title}" (${year}) film poster`)}&w=300&h=450&c=7&rs=1&p=0`;
 
@@ -26,7 +28,7 @@ export function getPosterUrl(title, year, existingUrl) {
 }
 
 export function getBackdropUrl(title, year, existingUrl) {
-    if (existingUrl && existingUrl.length > 5) return existingUrl;
+    if (existingUrl && existingUrl.length > 5) return getProxyUrl(existingUrl);
 
     const bingUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${title}" (${year}) film scene high quality`)}&w=1200&h=600&c=7&rs=1&p=0`;
 

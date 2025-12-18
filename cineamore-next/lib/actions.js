@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import logger from '@/lib/logger';
+import { getSession } from '@/lib/auth';
 
 // Validation Schema
 const MovieSchema = z.object({
@@ -71,6 +73,9 @@ export async function createMovie(formData) {
             downloadLinks: parsedLinks,
             addedAt: new Date()
         });
+
+        const session = await getSession();
+        logger.audit(session?.user || 'unknown_admin', 'CREATE_MOVIE', _id.toString(), { title: movieData.title });
     } catch (e) {
         return { error: "Failed to create movie. " + e.message };
     }
@@ -121,6 +126,9 @@ export async function updateMovie(id, formData) {
             genre: genreArray,
             downloadLinks: parsedLinks
         });
+
+        const session = await getSession();
+        logger.audit(session?.user || 'unknown_admin', 'UPDATE_MOVIE', id, { title: movieData.title });
     } catch (e) {
         return { error: "Failed to update movie. " + e.message };
     }
@@ -133,7 +141,11 @@ export async function updateMovie(id, formData) {
 
 export async function deleteMovie(id) {
     await dbConnect();
-    await Movie.findByIdAndDelete(id);
+    const movie = await Movie.findByIdAndDelete(id);
+    const session = await getSession();
+    if (movie) {
+        logger.audit(session?.user || 'unknown_admin', 'DELETE_MOVIE', id, { title: movie.title });
+    }
     revalidatePath('/admin');
     revalidatePath('/');
 }

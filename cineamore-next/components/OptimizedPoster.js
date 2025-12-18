@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { getProxyUrl } from '@/lib/image-proxy';
 
 /**
  * Optimized movie poster image with fallback and error handling.
@@ -23,7 +24,7 @@ export default function OptimizedPoster({
     const fallbackUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(`"${title}" (${year}) film poster`)}&w=300&h=450&c=7&rs=1&p=0`;
 
     // Use provided src, or fallback if empty/errored
-    const imageUrl = (!src || error) ? fallbackUrl : src;
+    const imageUrl = (!src || error) ? fallbackUrl : getProxyUrl(src);
 
     return (
         <div className={`relative overflow-hidden bg-black/40 ${className}`}>

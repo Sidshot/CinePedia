@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineAmore V2: Technical Engineering Log</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        h1 {
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        h2 {
+            margin-top: 30px;
+            color: #111;
+            font-size: 1.4em;
+            border-left: 4px solid #0070f3;
+            padding-left: 10px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        strong {
+            color: #000;
+            font-weight: 600;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+            color: #c72e41;
+        }
+        .meta {
+            color: #666;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        @media print {
+            body { padding: 0; max-width: 100%; }
+            h2 { border-left-color: #000; }
+            a { text-decoration: none; color: #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>👨‍💻 CineAmore V2: Technical Engineering Log</h1>
+    <div class="meta">
+        <strong>Date:</strong> December 2025<br>
+        <strong>To:</strong> Engineering Team / Audit<br>
+        <strong>Subject:</strong> System Hardening & Architecture Overhaul
+    </div>
+
+    <p>This log details the transition from a "Prototype" phase to a "Production-Grade" architecture. We focused on Type Safety, Algorithmic Robustness, and DevOps Gates.</p>
+
+    <h2>1. 🛡️ Data Integrity & Schema Validation</h2>
+    <ul>
+        <li><strong>Problem:</strong> Weak schema enforcement allowed "poison pills" (movies without titles/years) and massive data duplication.</li>
+        <li><strong>Solution:</strong> Implemented <strong>Strict Invariant Enforcement</strong>.
+            <ul>
+                <li><strong>Zod Integration:</strong> All inputs (Forms, APIs, Imports) are now validated against a Zod schema before touching the DB.</li>
+                <li><strong>Mongoose Middleware:</strong> Added <code>pre-save</code> hooks to enforce business logic at the ODM layer (e.g., stripping legacy fields).</li>
+                <li><strong>Migration:</strong> Wrote idempotent scripts (<code>scripts/audit-db.mjs</code>) to scrub 2,500+ records, migrating legacy <code>dl</code> fields to a normalized <code>downloadLinks</code> array structure.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>2. 🧠 Algorithmic CSV/JSON Parser (<code>O(n)</code> Analysis)</h2>
+    <ul>
+        <li><strong>Feature:</strong> "Smart Import" for admins.</li>
+        <li><strong>Challenge:</strong> User-uploaded CSVs have unpredictable headers (e.g., "Name" vs "Title", Spanish vs English) and ordering.</li>
+        <li><strong>Algorithm:</strong> Developed a <strong>Content-Based Heuristic Parser</strong>.
+            <ol>
+                <li><strong>Sampling:</strong> Reads the first 20 rows.</li>
+                <li><strong>Type Inference:</strong> Analyzes column data types (checking for URL patterns, Year integers <code>1880-2100</code>, Text entropy).</li>
+                <li><strong>Mapping:</strong> Dynamically maps columns to schema fields based on content confidence scores, ignoring headers entirely if needed.</li>
+                <li><strong>Result:</strong> successfully parses messy datasets where <code>title</code> is Column 5 and <code>url</code> is Column 2, with zero user config.</li>
+            </ol>
+        </li>
+    </ul>
+
+    <h2>3. 🚦 Write Safety & Circuit Breakers</h2>
+    <ul>
+        <li><strong>Pattern:</strong> <strong>Circuit Breaker</strong>.</li>
+        <li><strong>Implementation:</strong>
+            <ul>
+                <li>In bulk operations (Import/Backfill), the system monitors the <strong>Error Rate</strong> in real-time.</li>
+                <li>If <code>(Errors / Processed) > 5%</code>, the process <strong>throws an exception</strong> and rolls back (or aborts) to prevent database pollution.</li>
+                <li><strong>Hard Cap:</strong> Enforced a <code>MAX_BATCH_SIZE = 500</code> constant to prevent memory leaks in the Node.js event loop during heavy writes.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>4. 🔒 DevOps: The "Pre-Deploy" Gate</h2>
+    <ul>
+        <li><strong>Philosophy:</strong> "If it can break, it shouldn't build."</li>
+        <li><strong>Implementation:</strong>
+            <ul>
+                <li>Hacked <code>package.json</code> scripts to inject a <code>pre-deploy</code> hook.</li>
+                <li><code>npm run build</code> is now <code>node scripts/pre-deploy.mjs && next build</code>.</li>
+                <li><strong>The Check:</strong> Spawns a child process to audit the <em>live</em> production DB connection and run a Schema Fidelity Check.</li>
+                <li><strong>Effect:</strong> Prevents deployment if Environment Variables are missing or if the DB contains invalid legacy data.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h2>5. 🔭 Observability</h2>
+    <ul>
+        <li><strong>Pattern:</strong> Structured Logging.</li>
+        <li><strong>Change:</strong> Replaced ad-hoc <code>console.log</code> with a centralized <code>logger</code> utility.</li>
+        <li><strong>Format:</strong> JSON-structured logs (<code>{ level: 'INFO', action: 'CREATE_MOVIE', meta: {...} }</code>) for easy ingestion by Datadog/CloudWatch.</li>
+    </ul>
+
+    <hr style="margin-top: 40px; border: 0; border-top: 1px solid #ccc;">
+
+    <h2>🏗️ Stack Overview (Current)</h2>
+    <ul>
+        <li><strong>Framework:</strong> Next.js 15 (App Router, Server Actions)</li>
+        <li><strong>Database:</strong> MongoDB (Mongoose ODM)</li>
+        <li><strong>Validation:</strong> Zod</li>
+        <li><strong>Auth:</strong> JWT (Stateless Session) via NextAuth v5</li>
+        <li><strong>Styling:</strong> TailwindCSS + CSS Variables (Theme Aware)</li>
+    </ul>
+
+    <p><em>Signed,<br>The DevOps Team</em></p>
+
+</body>
+</html>

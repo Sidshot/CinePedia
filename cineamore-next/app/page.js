@@ -4,6 +4,7 @@ import MovieGrid from '@/components/MovieGrid';
 import staticData from '@/lib/movies.json';
 import Hero from '@/components/Hero';
 import ActionFABs from '@/components/ActionFABs';
+import { getProxyUrl } from '@/lib/image-proxy';
 
 // Pagination config
 const MOVIES_PER_PAGE = 48;
@@ -229,7 +230,7 @@ export default async function Home({ searchParams }) {
                 <div className="aspect-[2/3] bg-[var(--card-bg)] relative flex items-center justify-center">
                   {movie.poster ? (
                     <img
-                      src={movie.poster}
+                      src={getProxyUrl(movie.poster)}
                       alt={movie.title}
                       className="w-full h-full object-cover"
                       loading="lazy"

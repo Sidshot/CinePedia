@@ -5,6 +5,8 @@ import Movie from '@/models/Movie';
 import { searchMovies, getMovieDetails } from '@/lib/tmdb';
 import { revalidatePath } from 'next/cache';
 import mongoose from 'mongoose';
+import logger from '@/lib/logger';
+import { getSession } from '@/lib/auth';
 
 /**
  * Detect file format from content
@@ -386,6 +388,12 @@ export async function validateImportData(jsonData) {
             return { error: 'Invalid format: expected { "movies": [...] }' };
         }
 
+        // SAFETY: Hard Cap
+        const HARD_CAP = 500;
+        if (data.movies.length > HARD_CAP) {
+            return { error: `Safety Limit Exceeded: Max ${HARD_CAP} items per import (Found ${data.movies.length}). Please split your file.` };
+        }
+
         // Await all validation promises
         const results = await Promise.all(
             data.movies.map((movie, index) => validateMovieEntry(movie, index))
@@ -507,6 +515,11 @@ export async function bulkImportMovies(movies) {
         details: []
     };
 
+    // SAFETY: Circuit Breaker Thresholds
+    const MAX_ERROR_RATE = 0.05; // 5%
+    const totalItems = movies.length;
+    let consecutiveErrors = 0;
+
     for (const movie of movies) {
         try {
             // Skip invalid entries
@@ -565,12 +578,31 @@ export async function bulkImportMovies(movies) {
             console.error('Error importing movie:', movie.title, e);
             results.errors.push({ title: movie.title, error: e.message });
             results.details.push({ title: movie.title, status: 'error', reason: e.message });
+
+            // SAFETY: Circuit Breaker Check
+            consecutiveErrors++;
+            const currentErrorRate = results.errors.length / totalItems;
+
+            if (consecutiveErrors > 10) {
+                throw new Error('ABORTING: Too many consecutive errors (10). Check your data source.');
+            }
+
+            if (results.imported > 20 && currentErrorRate > MAX_ERROR_RATE) {
+                throw new Error(`ABORTING: Error rate exceeded 5% (${(currentErrorRate * 100).toFixed(1)}%). Stopping to prevent data corruption.`);
+            }
         }
     }
 
     // Revalidate homepage
     revalidatePath('/');
     revalidatePath('/admin');
+
+    const session = await getSession();
+    logger.audit(session?.user || 'unknown_admin', 'BULK_IMPORT', 'batch', {
+        imported: results.imported,
+        skipped: results.skipped,
+        errors: results.errors.length
+    });
 
     return results;
 }
