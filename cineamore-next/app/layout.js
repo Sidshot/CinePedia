@@ -3,6 +3,7 @@ import UserMenu from "@/components/UserMenu";
 import { Geist, Geist_Mono } from "next/font/google";
 import { auth } from "@/lib/auth-next";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,10 +45,10 @@ export default async function RootLayout({ children }) {
 
         <Header userMenu={<UserMenu />} isLoggedIn={isLoggedIn} />
 
-        {children}
         <Analytics />
+        <SpeedInsights />
+        {children}
       </body>
     </html>
   );
 }
-
