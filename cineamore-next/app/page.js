@@ -210,7 +210,7 @@ export default async function Home({ searchParams }) {
   serializedMovies = Array.from(uniqueMovies.values());
 
   return (
-    <main className="min-h-screen p-8 max-w-[1600px] mx-auto">
+    <main className="min-h-screen p-8 pb-32 max-w-[1600px] mx-auto">
       {/* Client Hero handling Randomization (only on page 1 and no search active) */}
       {currentPage === 1 && !searchQuery && <Hero movies={heroMovies.length > 0 ? heroMovies : serializedMovies.slice(0, 10)} />}
 
