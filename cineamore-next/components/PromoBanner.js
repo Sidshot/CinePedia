@@ -23,6 +23,25 @@ export default function PromoBanner() {
     }
   }, []);
 
+  // Lock body scroll when banner is visible
+  useEffect(() => {
+    if (isVisible) {
+      // Save current scroll position and lock
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      // Restore scrolling
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isVisible]);
+
   const handleDismiss = () => {
     // Session-only dismissal - banner will reappear on page reload
     setIsVisible(false);
