@@ -80,25 +80,45 @@ export default function ActionFABs() {
         }
     };
 
+    const [showMenu, setShowMenu] = useState(false);
+
     return (
         <>
-            <div className="fixed bottom-6 right-6 flex flex-col gap-4 z-50 items-end">
-                {/* Request FAB (Glossy Orange Pill) */}
-                <button
-                    onClick={handleRequest}
-                    className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-full backdrop-blur-2xl bg-gradient-to-r from-orange-500/85 to-amber-500/85 border border-white/30 shadow-[0_8px_32px_rgba(249,115,22,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] hover:scale-105 hover:bg-orange-500/95 transition-all duration-300 ring-1 ring-white/20"
-                >
-                    <span className="text-xl drop-shadow-md">⦿</span>
-                    <span className="text-sm tracking-wide font-bold text-white drop-shadow-sm">Request Film</span>
-                </button>
+            <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50 items-end">
+                {/* Menu Items (Slide Up Animation) */}
+                <div className={`flex flex-col gap-3 transition-all duration-300 origin-bottom ${showMenu ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none'}`}>
 
-                {/* Report FAB (Glossy Red/Pink Pill) */}
+                    {/* Request Item */}
+                    <button
+                        onClick={() => { handleRequest(); setShowMenu(false); }}
+                        className="flex items-center gap-3 px-4 py-2 rounded-xl backdrop-blur-xl bg-orange-500/90 text-white shadow-lg hover:scale-105 transition-transform border border-white/20"
+                    >
+                        <span className="text-sm font-bold">Request Film</span>
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-lg">⦿</span>
+                    </button>
+
+                    {/* Report Item */}
+                    <button
+                        onClick={() => { setShowReportModal(true); setShowMenu(false); }}
+                        className="flex items-center gap-3 px-4 py-2 rounded-xl backdrop-blur-xl bg-red-500/90 text-white shadow-lg hover:scale-105 transition-transform border border-white/20"
+                    >
+                        <span className="text-sm font-bold">Report Issue</span>
+                        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 text-lg">🗨</span>
+                    </button>
+                </div>
+
+                {/* Main FAB (Circular Glossy) */}
                 <button
-                    onClick={() => setShowReportModal(true)}
-                    className="group relative flex items-center justify-center gap-2 px-6 py-3 rounded-full backdrop-blur-2xl bg-gradient-to-r from-red-500/85 to-pink-500/85 border border-white/30 shadow-[0_8px_32px_rgba(239,68,68,0.3)] shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] hover:scale-105 hover:bg-red-500/95 transition-all duration-300 ring-1 ring-white/20"
+                    onClick={() => setShowMenu(!showMenu)}
+                    className={`
+                        group relative flex items-center justify-center w-14 h-14 rounded-full 
+                        backdrop-blur-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)] 
+                        border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.3)] 
+                        hover:scale-110 active:scale-95 transition-all duration-300 z-50
+                        ${showMenu ? 'rotate-45' : 'rotate-0'}
+                    `}
                 >
-                    <span className="text-xl drop-shadow-md">🗨</span>
-                    <span className="text-sm tracking-wide font-bold text-white drop-shadow-sm">Report Issue</span>
+                    <span className="text-3xl text-white font-light drop-shadow-md pb-1">+</span>
                 </button>
             </div>
 

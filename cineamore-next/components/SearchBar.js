@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function SearchBar({ onSearch, placeholder = "Search all films...", defaultValue = '' }) {
+export default function SearchBar({ onSearch, placeholder = "Search all films...", defaultValue = '', onFocus }) {
     const [query, setQuery] = useState(defaultValue);
 
     // Submit on Enter key
@@ -35,6 +35,7 @@ export default function SearchBar({ onSearch, placeholder = "Search all films...
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
+                onFocus={onFocus}
             />
             {query && (
                 <button
