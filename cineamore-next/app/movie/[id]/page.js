@@ -175,7 +175,8 @@ export default async function MoviePage({ params }) {
                             <span className="text-[var(--accent)]">⬇</span> Download Links
                         </h3>
                         <div className="flex flex-wrap gap-3">
-                            {links.map((link, idx) => (
+                            {/* Primary Links (First 4) */}
+                            {links.slice(0, 4).map((link, idx) => (
                                 <SecureDownloadButton
                                     key={idx}
                                     movieId={movie._id || movie.__id}
@@ -183,6 +184,28 @@ export default async function MoviePage({ params }) {
                                     label={link.label || 'Download'}
                                 />
                             ))}
+
+                            {/* More Links Dropdown (If > 4) */}
+                            {links.length > 4 && (
+                                <details className="relative group w-full sm:w-auto">
+                                    <summary className="list-none cursor-pointer flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-bold bg-[var(--card-bg)] border border-[var(--border)] text-[var(--fg)] hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/30 transition-all select-none w-full sm:w-auto">
+                                        <span>+{links.length - 4} More Links</span>
+                                        <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                    </summary>
+                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-64 bg-[var(--card-bg)]/95 backdrop-blur-xl border border-[var(--border)] rounded-xl shadow-2xl p-3 grid gap-2 z-50 animate-fade-in">
+                                        {links.slice(4).map((link, idx) => (
+                                            <div key={idx + 4} className="w-full">
+                                                <SecureDownloadButton
+                                                    movieId={movie._id || movie.__id}
+                                                    linkIndex={idx + 4}
+                                                    label={link.label || `Download ${idx + 5}`}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </details>
+                            )}
+
                             {links.length === 0 && <span className="text-[var(--muted)]">No download links available.</span>}
                         </div>
                     </div>
