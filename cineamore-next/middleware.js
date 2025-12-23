@@ -73,6 +73,22 @@ export async function middleware(request) {
 
     // 2. 🚦 RATE LIMITING (Skip for static assets)
     if (!pathname.startsWith('/_next') && !pathname.includes('.')) {
+        // 2a. ADMIN EXEMPTION: Skip rate limiting for logged-in admins
+        const sessionCookie = request.cookies.get('session')?.value;
+        if (sessionCookie) {
+            try {
+                const { decrypt } = await import('./lib/auth');
+                const session = await decrypt(sessionCookie);
+                if (session && session.role === 'admin') {
+                    // Admin detected - skip rate limiting
+                    return NextResponse.next();
+                }
+            } catch (e) {
+                // Invalid session, continue to rate limiting
+            }
+        }
+
+        // 2b. Apply rate limits for non-admin users
         let limiter;
 
         if (pathname.startsWith('/api/download')) limiter = getRateLimiter('download');
