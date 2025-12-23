@@ -31,6 +31,26 @@ const MovieSchema = new mongoose.Schema({
         url: String,
         addedAt: { type: Date, default: Date.now }
     }],
+
+    // NEW Phase 3: Data Safety
+    visibility: {
+        state: {
+            type: String,
+            enum: ['visible', 'hidden', 'quarantined'],
+            default: 'visible',
+            index: true
+        },
+        reason: String, // e.g., "Missing Poster", "DMCA"
+        updatedAt: { type: Date, default: Date.now }
+    },
+
+    // NEW Phase 3: Provenance
+    source: {
+        type: { type: String, enum: ['manual', 'scrape', 'import'], default: 'manual' },
+        identifier: String, // e.g. "jottacloud-import-v1"
+        importedAt: { type: Date, default: Date.now }
+    },
+
     addedAt: { type: Date, default: Date.now }
 });
 

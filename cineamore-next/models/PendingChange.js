@@ -25,6 +25,18 @@ const PendingChangeSchema = new mongoose.Schema({
         required: true
     },
 
+    // NEW Phase 3: Conflict Detection & Scoring
+    submittedAgainstUpdatedAt: {
+        type: Date,
+        default: null, // The 'updatedAt' of the Movie when the contributor opened the form
+        required: false
+    },
+
+    changeWeight: {
+        type: Number, // Calculated score (e.g., Title change = 100, Typo = 1)
+        default: 0
+    },
+
     // Snapshot of movie BEFORE the change (for diff view on updates)
     previousData: {
         type: mongoose.Schema.Types.Mixed,

@@ -122,7 +122,19 @@ export default async function AdminDashboard({ searchParams }) {
                             return (
                                 <tr key={id} className="hover:bg-white/5 transition group">
                                     <td className="p-4">
-                                        <div className="font-bold text-[var(--fg)]">{movie.title}</div>
+                                        <div className="font-bold text-[var(--fg)] flex items-center gap-2">
+                                            {movie.title}
+                                            {movie.visibility?.state === 'quarantined' && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                                    Quarantined
+                                                </span>
+                                            )}
+                                            {(!movie.visibility || movie.visibility.state === 'hidden') && movie.visibility?.state !== 'quarantined' && (
+                                                <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                                    Hidden
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="text-xs text-[var(--muted)] md:hidden">{movie.year} • {movie.director}</div>
                                     </td>
                                     <td className="p-4 hidden md:table-cell">
