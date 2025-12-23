@@ -1,36 +1,22 @@
-import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { NextResponse } from 'next/server';
 
-// --- AUTH CONFIG ---
-const secretKey = process.env.JWT_SECRET || 'default-secret-key-change-me-in-prod';
-const key = new TextEncoder().encode(secretKey);
-
-async function verifySession(token) {
-    try {
-        const { payload } = await jwtVerify(token, key, { algorithms: ['HS256'] });
-        return payload;
-    } catch {
-        return null;
-    }
-}
-
-// --- RATE LIMIT CONFIG (Defined here to avoid instantiating on every request if possible, but middleware edge constraints might require it inside) ---
-// We use a Map for local dev fallback if Redis envs are missing
-const localCache = new Map();
-
+/**
+ * Rate Limiter Factory
+ * Production: Upstash Redis | Local Dev: Simple Map fallback
+ */
 function getRateLimiter(type) {
     // Prod: Upstash
     if (process.env.UPSTASH_REDIS_REST_URL) {
         const redis = Redis.fromEnv();
 
-        // Tune limits based on abuse patterns (Stricter V2)
+        // Tune limits based on abuse patterns (Balanced for UX)
         switch (type) {
-            case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, '15 m'), Analytics: true, prefix: 'rl_dl' }); // 3 per 15m
-            case 'api': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m'), Analytics: true, prefix: 'rl_api' });
-            case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 m'), Analytics: true, prefix: 'rl_list' }); // 10 per 1m
-            case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m'), Analytics: true, prefix: 'rl_mov' }); // 30 per 1m
+            case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, '15 m'), Analytics: true, prefix: 'rl_dl' }); // 5 per 15m
+            case 'api': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '1 m'), Analytics: true, prefix: 'rl_api' }); // 60 per 1m
+            case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m'), Analytics: true, prefix: 'rl_list' }); // 30 per 1m
+            case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '1 m'), Analytics: true, prefix: 'rl_mov' }); // 60 per 1m
             default: return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '1 m'), Analytics: true, prefix: 'rl_gen' });
         }
     }
@@ -43,7 +29,10 @@ function getRateLimiter(type) {
     };
 }
 
-
+/**
+ * Vercel Edge Middleware
+ * Runs on EVERY request before page render
+ */
 export async function middleware(request) {
     const { pathname } = request.nextUrl;
     const ip = request.ip || '127.0.0.1';
@@ -56,9 +45,7 @@ export async function middleware(request) {
     if (badBots.some(bot => userAgent.toLowerCase().includes(bot))) {
         return new NextResponse(JSON.stringify({
             error: 'Access Denied',
-            reason: 'Automated access detected',
-            message: 'Our security system has detected automated bot activity. If you believe this is an error, please contact support.',
-            userAgent: userAgent.substring(0, 50) + '...'
+            message: 'Access to this resource has been restricted. Please use a standard web browser.'
         }), {
             status: 403,
             headers: { 'Content-Type': 'application/json' }
@@ -76,9 +63,7 @@ export async function middleware(request) {
             if (secFetchSite && !secChUa) {
                 return new NextResponse(JSON.stringify({
                     error: 'Access Denied',
-                    reason: 'Browser security check failed',
-                    message: 'Your browser sent inconsistent security headers. Please use an updated browser or disable browser extensions that might interfere with security headers.',
-                    details: 'Missing required Chrome security headers'
+                    message: 'Your browser configuration is not supported. Please try a different browser or disable extensions.'
                 }), {
                     status: 403,
                     headers: { 'Content-Type': 'application/json' }
@@ -109,7 +94,7 @@ export async function middleware(request) {
 
         if (pathname.startsWith('/api/download')) limiter = getRateLimiter('download');
         else if (pathname.startsWith('/api')) limiter = getRateLimiter('api');
-        else if (pathname === '/' || pathname.startsWith('/search')) limiter = getRateLimiter('listing'); // Stricter for listings
+        else if (pathname === '/' || pathname.startsWith('/search')) limiter = getRateLimiter('listing');
         else if (pathname.startsWith('/movie/')) limiter = getRateLimiter('detail');
         else limiter = getRateLimiter('default');
 
@@ -122,30 +107,10 @@ export async function middleware(request) {
 
         if (!success) {
             const retryAfterSeconds = Math.ceil((reset - Date.now()) / 1000);
-            const retryAfterMinutes = Math.ceil(retryAfterSeconds / 60);
-
-            // Determine which limit was hit
-            let limitType = 'general';
-            let limitDescription = `${limit} requests per minute`;
-
-            if (pathname.startsWith('/api/download')) {
-                limitType = 'downloads';
-                limitDescription = '3 downloads per 15 minutes';
-            } else if (pathname === '/' || pathname.startsWith('/search')) {
-                limitType = 'browsing';
-                limitDescription = '10 page views per minute';
-            } else if (pathname.startsWith('/movie/')) {
-                limitType = 'movie details';
-                limitDescription = '30 movie pages per minute';
-            }
 
             return new NextResponse(JSON.stringify({
                 error: 'Too Many Requests',
-                reason: `Rate limit exceeded for ${limitType}`,
-                message: `You've exceeded the limit of ${limitDescription}. Please wait before trying again.`,
-                limit: limit,
-                retryAfter: retryAfterSeconds,
-                retryIn: retryAfterMinutes > 1 ? `${retryAfterMinutes} minutes` : `${retryAfterSeconds} seconds`
+                message: 'You are browsing too quickly. Please slow down and try again in a moment.'
             }), {
                 status: 429,
                 headers: {
@@ -154,33 +119,37 @@ export async function middleware(request) {
                 }
             });
         }
+
+        return res;
     }
 
     // 3. 🔐 AUTHENTICATION (Admin/Contributor)
     if (pathname.startsWith('/admin') || pathname.startsWith('/contributor')) {
         const sessionCookie = request.cookies.get('session')?.value;
-        const session = sessionCookie ? await verifySession(sessionCookie) : null;
 
-        if (pathname.startsWith('/admin')) {
-            if (!session || !session.user) {
-                const loginUrl = new URL('/login', request.url);
-                loginUrl.searchParams.set('callbackUrl', request.url);
-                return NextResponse.redirect(loginUrl);
-            }
-            if (session.role && session.role !== 'admin') {
-                return NextResponse.redirect(new URL('/contributor', request.url));
-            }
+        if (!sessionCookie) {
+            return NextResponse.redirect(new URL('/login', request.url));
         }
 
-        if (pathname.startsWith('/contributor')) {
-            if (!session || !session.user) {
-                const loginUrl = new URL('/login', request.url);
-                loginUrl.searchParams.set('callbackUrl', request.url);
-                return NextResponse.redirect(loginUrl);
-            }
-            if (session.role !== 'contributor' && session.role !== 'admin') {
+        try {
+            const { decrypt } = await import('./lib/auth');
+            const session = await decrypt(sessionCookie);
+
+            if (!session) {
                 return NextResponse.redirect(new URL('/login', request.url));
             }
+
+            // Role-based access
+            if (pathname.startsWith('/admin') && session.role !== 'admin') {
+                return NextResponse.redirect(new URL('/contributor', request.url));
+            }
+            if (pathname.startsWith('/contributor') && session.role !== 'contributor') {
+                return NextResponse.redirect(new URL('/admin', request.url));
+            }
+
+            return NextResponse.next();
+        } catch (error) {
+            return NextResponse.redirect(new URL('/login', request.url));
         }
     }
 
