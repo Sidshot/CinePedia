@@ -733,4 +733,93 @@ We paused feature development to harden the system against data corruption and o
 
 ### ⚠️ Lessons Learned
 *   **State "Stickiness"**: UI components with validation error states (like image 404s) must explicitly reset when their inputs change, otherwise they "lie" to the user.
-*   **Double Proxying**: `next/image` optimizing a local API route (`/api/image`) which proxies an external URL is redundant and prone to timeouts. Sometimes raw `<img>` (or unoptimized) is better for internal proxies.
+
+---
+
+## 📝 Session Log: 2025-12-23 (Scraper Cleanup & UI Polish)
+**Goal**: Finalize homepage UI, automate data cleaning, and handle massive scraper input.
+
+### ✅ Features Completed
+
+#### 1. Homepage Refactor (Dual View)
+*   **New Architecture**:
+    *   **Genre Rows**: "Netflix-style" horizontal scrolling rows for browsing.
+    *   **Filtered Grid**: Classic grid view appears when Searching or Filtering.
+    *   **Component**: `GenreRow.js` (Horizontal scroll, snap-to-start, lazy loaded).
+    *   **Files**: `app/page.js` (Logic splitter), `components/GenreRow.js`.
+
+#### 2. Persistent Minimalist Footer
+*   **Design**: Clean, single-line footer with "Go to Top" button.
+*   **Functionality**:
+    *   "Go to Top" smooth scrolls to header.
+    *   "DMCA" and "Contact" tabs expand inline (no page navigation).
+*   **Files**: `components/Footer.js`, `app/layout.js`.
+
+#### 3. Data Pipeline & Scraper (Ongoing)
+*   **Scraper**: `scrape_directory.py` running for 13+ hours (Processed ~240k lines).
+*   **Urgent Title Fix**:
+    *   **Issue**: Scraper imported polluted titles (`/movies/Inception (2010)...`).
+    *   **Fix**: Created fix-db-titles.mjs` to strip paths/extensions from MongoDB live.
+    *   **Result**: 3,216 titles cleaned instantly.
+
+#### 4. Enrichment Optimization & Quarantine
+*   **Optimization**: Rewrote `enrich-directory.mjs` with **5x concurrency**, timeouts, and User-Agent headers. Speed increased from ~100/hour to ~5000/hour.
+*   **Quarantine Logic**:
+    *   Movies rejected by TMDB (not found) are now flagged `hidden: true`.
+    *   Movies missing critical metadata (poster, genre) are flagged `hidden: true`.
+    *   **Result**: 1,166 bad files hidden, 7,500+ clean movies visible.
+
+#### 5. "Recently Added" Fix
+*   **Bug**: Locking "View All" to `genre=newest` returned 0 results.
+*   **Fix**:
+    *   Updated `GenreRow.js` to accept `viewAllUrl`.
+    *   Updated `app/page.js` to link "Recently Added" -> `/?sort=newest` (semantic sort).
+*   **Data Fix**: Scraped movies had old `addedAt` dates. Run `touch-enriched.mjs` to bump their timestamps to `Date.now()`, ensuring they appear at the top of the list.
+
+### 📁 New Scripts Created
+```
+scripts/
+├── fix-db-titles.mjs        # Cleans "/movies/..." from DB titles
+├── quarantine-bad-movies.mjs # Hides unenriched content
+├── enrich-directory.mjs     # The optimized 5x parallel enrichment
+├── touch-enriched.mjs       # Bumps addedAt timestamp
+├── check-status.mjs         # Reports Visible vs Hidden count
+├── debug-recent.mjs         # Debugs homepage query issues
+└── fix_titles.py            # Post-processor for scraper JSON output
+```
+
+### ⚠️ Lessons Learned
+1.  **Date Timestamps Matter**: Users expect "Recently Added" to mean "Appeared on Site", not "File Created Date".
+2.  **Concurrency is King**: Serial API fetching is too slow for 10k items. Concurrency + Timeouts is essential using `Promise.all`.
+3.  **Buffer Truncation**: Debugging large lists in terminal requires simplified output (avoiding huge JSON dumps).
+
+
+## 🔐 SECURITY ENFORCEMENT PROTOCOL (BINDING)
+**Role**: Security Enforcement Agent
+**Status**: ACTIVE (Iron Dome)
+**Philosophy**: Defense > UX. Economic Deterrence.
+
+### 1. Hard Constraints (DO NOT RELAX)
+*   **Edge Firewall**: `middleware.js` MUST block `curl`, `wget`, `python`.
+*   **Header Lock**: Chrome UAs MUST have `Sec-CH-UA` if sending `Sec-Fetch-*`.
+*   **Rate Limits (Upstash)**:
+    *   Listings: **10/min** (Anti-Mirroring)
+    *   Details: **30/min** (Anti-Scraping)
+    *   Downloads: **3/15min** (Anti-Bulk)
+*   **Download Vault**:
+    *   NO raw links in frontend.
+    *   Links MUST use signed JWT (`movieId` + `linkIndex` + `ip`).
+    *   Redirects MUST be `307 Temporary`.
+
+### 2. Emergency Kill Switch (Eschelon Protocol)
+*   **Trigger**: Massive abuse / bandwidth spike.
+*   **Action**: Set `KILL_SWITCH_DOWNLOADS=true` in Vercel.
+*   **Effect**: 503 Service Unavailable on ALL download routes.
+
+### 3. Accepted Risks
+*   **Mobile IP Drift**: Users changing towers may get 403. Acceptable.
+*   **Puppeteer Siege**: Rich attackers ($100+/day) can bypass. Acceptable (Economic Victory).
+
+### 4. Documentation Rules
+*   ⛔ BANNED: "Impossible", "Unbreakable".
+*   ✅ REQUIRED: "Economically Infeasible", "Cost-Prohibitive".
