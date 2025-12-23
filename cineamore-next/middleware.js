@@ -25,12 +25,12 @@ function getRateLimiter(type) {
     if (process.env.UPSTASH_REDIS_REST_URL) {
         const redis = Redis.fromEnv();
 
-        // Define limits based on type
+        // Tune limits based on abuse patterns (Stricter V2)
         switch (type) {
-            case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, '10 m'), Analytics: true, prefix: 'rl_dl' });
+            case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(3, '15 m'), Analytics: true, prefix: 'rl_dl' }); // 3 per 15m
             case 'api': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m'), Analytics: true, prefix: 'rl_api' });
-            case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(20, '1 m'), Analytics: true, prefix: 'rl_list' }); // Home/Search - Strict
-            case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, '1 m'), Analytics: true, prefix: 'rl_mov' });
+            case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(10, '1 m'), Analytics: true, prefix: 'rl_list' }); // 10 per 1m
+            case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m'), Analytics: true, prefix: 'rl_mov' }); // 30 per 1m
             default: return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '1 m'), Analytics: true, prefix: 'rl_gen' });
         }
     }
@@ -38,7 +38,6 @@ function getRateLimiter(type) {
     // Local Dev Fallback (Simple Map)
     return {
         limit: async (ip) => {
-            // Very permissive local limit
             return { success: true, pending: Promise.resolve(), limit: 100, remaining: 99, reset: 0 };
         }
     };
@@ -50,10 +49,26 @@ export async function middleware(request) {
     const ip = request.ip || '127.0.0.1';
     const userAgent = request.headers.get('user-agent') || '';
 
-    // 1. 🤖 BOT BLOCKER (UA Filter)
+    // 1. 🤖 BOT BLOCKER (UA Filter + Header Coherence)
     const badBots = ['curl', 'wget', 'python', 'scrapy', 'go-http-client', 'java'];
+
+    // A. Basic UA Filter
     if (badBots.some(bot => userAgent.toLowerCase().includes(bot))) {
         return new NextResponse('Access Denied', { status: 403 });
+    }
+
+    // B. Header Coherence (Anti-Spoofing)
+    if (userAgent.includes('Mozilla/5.0')) {
+        const secChUa = request.headers.get('sec-ch-ua');
+        const secFetchSite = request.headers.get('sec-fetch-site');
+
+        // Chrome claims usually require consistency
+        if (userAgent.includes('Chrome') && !userAgent.includes('Electron')) {
+            // If Sec-Fetch-Site exists (modern browser feature) but Sec-CH-UA is missing -> Suspicious
+            if (secFetchSite && !secChUa) {
+                return new NextResponse('Access Denied (Header Mismatch)', { status: 403 });
+            }
+        }
     }
 
     // 2. 🚦 RATE LIMITING (Skip for static assets)
