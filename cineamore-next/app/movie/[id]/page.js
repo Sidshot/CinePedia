@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import SecureDownloadButton from '@/components/SecureDownloadButton';
 import InteractiveRating from '@/components/InteractiveRating';
 import AddToListButton from '@/components/AddToListButton';
 import { notFound } from 'next/navigation';
@@ -175,15 +176,12 @@ export default async function MoviePage({ params }) {
                         </h3>
                         <div className="flex flex-wrap gap-3">
                             {links.map((link, idx) => (
-                                <a
+                                <SecureDownloadButton
                                     key={idx}
-                                    href={link.url}
-                                    target="_blank"
-                                    className="bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-white/10 px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 group"
-                                >
-                                    {link.label || 'Download'}
-                                    <svg className="w-4 h-4 opacity-50 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                                </a>
+                                    movieId={movie._id || movie.__id}
+                                    linkIndex={idx}
+                                    label={link.label || 'Download'}
+                                />
                             ))}
                             {links.length === 0 && <span className="text-[var(--muted)]">No download links available.</span>}
                         </div>
