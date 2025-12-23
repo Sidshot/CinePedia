@@ -22,9 +22,9 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
     const now = new Date();
     const isExpired = now > EXPIRY_DATE;
 
-    // Check session storage for "don't show again" preference
+    // Check local storage for "don't show again" preference
     const wasDismissedForSession = typeof window !== 'undefined' &&
-      sessionStorage.getItem(SESSION_KEY) === 'true';
+      localStorage.getItem(SESSION_KEY) === 'true';
 
     if (!isExpired && !wasDismissedForSession) {
       setIsVisible(true);
@@ -48,9 +48,9 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
   }, [isVisible]);
 
   const handleDismiss = () => {
-    // If "don't show again" is checked, save to sessionStorage
+    // If "don't show again" is checked, save to localStorage
     if (dontShowAgain) {
-      sessionStorage.setItem(SESSION_KEY, 'true');
+      localStorage.setItem(SESSION_KEY, 'true');
     }
     setIsVisible(false);
   };
@@ -120,7 +120,7 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
             />
-            <span>Don't show again this session</span>
+            <span>Don't show again</span>
           </label>
 
           {/* Skip Link */}
@@ -139,8 +139,8 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
           align-items: center;
           justify-content: center;
           background: rgba(0, 0, 0, 0.85);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           animation: fadeIn 0.4s ease-out;
         }
 
@@ -153,21 +153,22 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
           position: relative;
           max-width: 480px;
           width: 90%;
+          /* Darker, richer background for better readability and 'gloss' */
           background: linear-gradient(
             145deg,
-            rgba(255, 255, 255, 0.08) 0%,
-            rgba(255, 255, 255, 0.02) 100%
+            rgba(20, 20, 20, 0.96) 0%,
+            rgba(30, 30, 30, 0.98) 100%
           );
-          border: 1px solid rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-top: 1px solid rgba(255, 255, 255, 0.25);
-          border-radius: 24px;
+          border-radius: 28px;
           padding: 40px 32px;
           text-align: center;
           box-shadow: 
-            0 25px 50px rgba(0, 0, 0, 0.5),
+            0 25px 50px -12px rgba(0, 0, 0, 0.8),
             inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
+          backdrop-filter: blur(40px) saturate(180%);
+          -webkit-backdrop-filter: blur(40px) saturate(180%);
           overflow: hidden;
           animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
@@ -216,8 +217,8 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
         .promo-glow {
           position: absolute;
           border-radius: 50%;
-          filter: blur(60px);
-          opacity: 0.4;
+          filter: blur(70px);
+          opacity: 0.3; /* Slightly reduced for better contrast */
           pointer-events: none;
         }
 
@@ -300,31 +301,38 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
         }
 
         .promo-checkbox {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          margin: 20px auto 0;
-          color: var(--muted);
-          font-size: 0.8rem;
+          gap: 10px;
+          margin: 24px auto 0;
+          color: var(--fg);
+          font-size: 0.9rem;
+          font-weight: 600;
           cursor: pointer;
-          transition: color 0.2s ease;
+          transition: all 0.2s ease;
+          padding: 8px 16px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px;
         }
 
         .promo-checkbox:hover {
-          color: var(--fg);
+          background: rgba(255,255,255,0.1);
+          border-color: rgba(255,255,255,0.25);
+          transform: translateY(-1px);
         }
 
         .promo-checkbox input {
-          width: 16px;
-          height: 16px;
+          width: 18px;
+          height: 18px;
           accent-color: var(--accent);
           cursor: pointer;
         }
 
         .promo-skip {
           display: block;
-          margin: 12px auto 0;
+          margin: 16px auto 0;
           background: none;
           border: none;
           color: var(--muted);
@@ -336,6 +344,7 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
 
         .promo-skip:hover {
           color: var(--fg);
+          text-decoration: underline;
         }
 
         @media (max-width: 480px) {
@@ -355,6 +364,8 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
           .promo-cta {
             padding: 12px 24px;
             font-size: 0.9rem;
+            width: 100%;
+            justify-content: center;
           }
         }
       `}</style>
