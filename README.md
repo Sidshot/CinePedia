@@ -59,11 +59,13 @@ A personal film archive dashboard built as a Node.js monolith. It features a glo
 
 ## 📂 Project Structure
 
--   `/public`: Static assets (HTML, CSS, JS).
--   `/models`: Mongoose schemas.
--   `/data`: Local JSON backup/seed source.
--   `server.js`: Main application entry point.
--   `config.js`: Centralized configuration.
+-   `/cineamore-next`: **Active Web App** (Next.js 14, App Router). Main development focus.
+-   `/maintenance`: Python/Node.js scripts for crawling, cleaning, and DB enrichment.
+-   `/data`: Raw data exports (JSON/CSV) - *Gitignored*.
+-   `/docs`: Documentation and plans.
+-   `/archive`: Retired logs and debug files.
+-   `/models`: Legacy Mongoose schemas (shared with scripts).
+-   `server.js`: Legacy Express server (Monolith).
 
 ## 🛡 API Endpoints
 
