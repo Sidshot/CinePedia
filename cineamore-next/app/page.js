@@ -45,7 +45,7 @@ export default async function Home({ searchParams }) {
   const sortBy = params?.sort || 'year-desc';
 
   // Determine View Mode
-  const isDefaultView = !searchQuery && !currentGenre && currentPage === 1;
+  const isDefaultView = !searchQuery && !currentGenre && currentPage === 1 && sortBy === 'year-desc';
 
   let serializedMovies = [];
   let totalCount = 0;
@@ -123,13 +123,16 @@ export default async function Home({ searchParams }) {
           ];
         }
 
+
         let sortObj = { addedAt: -1 };
         switch (sortBy) {
+          case 'newest': sortObj = { addedAt: -1 }; break;
           case 'oldest': sortObj = { addedAt: 1 }; break;
           case 'year-desc': sortObj = { year: -1, addedAt: -1 }; break;
           case 'year-asc': sortObj = { year: 1, addedAt: -1 }; break;
           default: sortObj = { addedAt: -1 };
         }
+
 
         const skip = (currentPage - 1) * MOVIES_PER_PAGE;
         totalCount = await Movie.countDocuments(query);
