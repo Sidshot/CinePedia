@@ -5,7 +5,7 @@ import Movie from '@/models/Movie';
 
 /**
  * Admin-only endpoint to migrate legacy 'hidden' field to 'visibility' object
- * Run this ONCE after deploying the schema changes to production
+ * AND ensure all movies have a visibility field
  * 
  * Usage: POST to /api/admin/migrate-visibility
  * Requires: Admin authentication
@@ -24,17 +24,7 @@ export async function POST(request) {
         // 2. Connect to DB
         await dbConnect();
 
-        // 3. Check if already migrated
-        const sampleCheck = await Movie.findOne({ hidden: { $exists: true } });
-        if (!sampleCheck) {
-            return NextResponse.json({
-                success: true,
-                message: 'Migration already completed (no movies with legacy "hidden" field found)',
-                migrated: 0
-            });
-        }
-
-        // 4. Run Migration
+        // 3. Get all movies and check what needs migration
         console.log('🔍 Starting visibility migration...');
         const allMovies = await Movie.find({});
         console.log(`📊 Found ${allMovies.length} total movies`);
@@ -46,25 +36,37 @@ export async function POST(request) {
         const bulkOps = [];
 
         for (const movie of allMovies) {
-            // Skip if already migrated
-            if (movie.visibility && movie.visibility.state && movie.hidden === undefined) {
+            // Skip if already has proper visibility field
+            if (movie.visibility && movie.visibility.state) {
                 alreadyMigrated++;
                 continue;
             }
 
             const update = {
-                $unset: { hidden: "" },
                 $set: {}
             };
 
-            if (movie.hidden === true) {
-                update.$set.visibility = {
-                    state: 'quarantined',
-                    reason: 'Legacy hidden flag migration',
-                    updatedAt: new Date()
-                };
-                quarantined++;
-            } else {
+            // If has legacy hidden field, handle it
+            if (movie.hidden !== undefined) {
+                if (movie.hidden === true) {
+                    update.$set.visibility = {
+                        state: 'quarantined',
+                        reason: 'Legacy hidden flag migration',
+                        updatedAt: new Date()
+                    };
+                    quarantined++;
+                } else {
+                    update.$set.visibility = {
+                        state: 'visible',
+                        reason: null,
+                        updatedAt: new Date()
+                    };
+                    visible++;
+                }
+                update.$unset = { hidden: "" };
+            }
+            // No visibility field and no hidden field - add default visible
+            else {
                 update.$set.visibility = {
                     state: 'visible',
                     reason: null,
@@ -104,7 +106,7 @@ export async function POST(request) {
         } else {
             return NextResponse.json({
                 success: true,
-                message: 'No migration needed',
+                message: 'All movies already have visibility field',
                 stats: {
                     totalMovies: allMovies.length,
                     alreadyMigrated
