@@ -506,6 +506,10 @@ export async function checkDuplicates(movies) {
  * Import movies to database
  */
 export async function bulkImportMovies(movies) {
+    const { isAdmin } = await import('@/lib/auth');
+    if (!await isAdmin()) {
+        throw new Error("Unauthorized: Admin access required");
+    }
     await dbConnect();
 
     const results = {

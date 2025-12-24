@@ -7,12 +7,10 @@ import { getMovieDetails, searchMovies } from '@/lib/tmdb';
 
 export async function GET(req) {
     // 1. Auth Check
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    const session = sessionCookie ? await decrypt(sessionCookie) : null;
-
-    if (!session || !session.user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Auth Check (Standardized)
+    const { isAdmin } = await import('@/lib/auth');
+    if (!await isAdmin()) {
+        return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
     }
 
     await dbConnect();

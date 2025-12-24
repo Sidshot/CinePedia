@@ -8,9 +8,9 @@ import Movie from '@/models/Movie';
  */
 export async function GET(request) {
     try {
-        const session = await getSession();
-        if (!session || session.role !== 'admin') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        const { isAdmin } = await import('@/lib/auth');
+        if (!await isAdmin()) {
+            return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
         }
 
         await dbConnect();
@@ -69,9 +69,9 @@ export async function GET(request) {
  */
 export async function POST(request) {
     try {
-        const session = await getSession();
-        if (!session || session.role !== 'admin') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        const { isAdmin } = await import('@/lib/auth');
+        if (!await isAdmin()) {
+            return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
         }
 
         const { films, unquarantineAll } = await request.json();

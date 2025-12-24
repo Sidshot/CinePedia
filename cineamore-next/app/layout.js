@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import UserMenu from "@/components/UserMenu";
 import Footer from "@/components/Footer";
+import GlobalStickySearch from "@/components/GlobalStickySearch";
 import { Geist, Geist_Mono } from "next/font/google";
 import { auth } from "@/lib/auth-next";
 import { Analytics } from "@vercel/analytics/react";
@@ -45,6 +46,10 @@ export default async function RootLayout({ children }) {
         />
 
         <Header userMenu={<UserMenu />} isLoggedIn={isLoggedIn} />
+
+        {/* GLOBAL STICKY SEARCH - Appears when scrolling on ALL pages */}
+        {/* DO NOT REMOVE - User has requested this feature multiple times */}
+        <GlobalStickySearch />
 
         <Analytics />
         <SpeedInsights />

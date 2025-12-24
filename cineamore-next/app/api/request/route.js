@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/mongodb';
 import Request from '@/models/Request';
 import { NextResponse } from 'next/server';
+import { getRateLimit } from '@/lib/ratelimit';
 
 export async function POST(req) {
     try {
@@ -9,6 +10,21 @@ export async function POST(req) {
 
         if (!body.title) {
             return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
+        }
+
+        // Rate Limit (10 requests per 10s per IP)
+        const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+        const { success } = await getRateLimit().limit(ip);
+        if (!success) {
+            return new NextResponse('Too Many Requests', { status: 429 });
+        }
+
+        // Validate Input Length
+        if (body.title.length > 200) {
+            return NextResponse.json({ success: false, error: 'Title must be under 200 characters' }, { status: 400 });
+        }
+        if (body.details && body.details.length > 500) {
+            return NextResponse.json({ success: false, error: 'Details must be under 500 characters' }, { status: 400 });
         }
 
         const request = await Request.create(body);

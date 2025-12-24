@@ -1,12 +1,46 @@
 # CineAmore Session Memory
-**Last Updated:** 2025-12-22 15:20 IST (Contributor Role System)
+**Last Updated:** 2025-12-24 16:55 IST (Series Mode + TMDB Caching)
 
 ## 🟢 Current Status
 *   **Active Branch:** `main`
 *   **Mode:** `DEPLOYED & LIVE`
 *   **Production URL:** https://cineamore.vercel.app
 *   **Database:** MongoDB Atlas (`cluster0.lallguq.mongodb.net/cinepedia`)
-*   **Pending:** Pushing contributor system update
+*   **Pending:** Series Mode feature testing
+
+---
+
+## ⚠️ CORE PRINCIPLE: TMDB API USAGE
+
+> **"We CANNOT MISUSE TMDB API - this is God's truth."**
+
+This is a **non-negotiable rule** for CineAmore:
+-   **Always cache** TMDB responses (minimum 1 hour revalidation)
+-   **Never call** TMDB API on every page load
+-   **Limit concurrent requests** during scripts (use delays)
+-   **Use Promise.allSettled** to handle failures gracefully
+-   **Consider storing** frequently needed TMDB data in MongoDB
+
+**Rate Limits:**
+- Free tier: ~40-50 requests per 10 seconds
+- Backfill scripts must include delays between calls
+
+---
+
+## 🚨 CRITICAL FEATURE: GLOBAL STICKY SEARCH
+
+> **DO NOT REMOVE `GlobalStickySearch.js` - User has requested this 5+ times!**
+
+This is a **CRITICAL persistent feature**:
+-   **Location**: `components/GlobalStickySearch.js`
+-   **Added in**: `app/layout.js` (renders on EVERY page)
+-   **Behavior**: Appears when user scrolls past 100px
+-   **Mode-aware**: Yellow accent for films, orange for series
+-   **Purpose**: Allow users to search from anywhere on the site
+
+**If this feature is missing or broken, IMMEDIATELY restore it.**
+
+---
 
 ### 🛡️ Friendly Error Design (UX)
 *   **Problem**: Critical errors (like the 500 or Uncaught Exceptions) were showing raw JSON stack traces to users.
