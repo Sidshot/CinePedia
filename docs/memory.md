@@ -10,6 +10,25 @@
 
 ---
 
+## 📝 Session Log: 2025-12-24 (Surgical Architecture Fix)
+**Goal**: Permanently resolve Edge Runtime 500 Errors by enforcing strict code separation.
+
+### 🏥 Surgical Procedure
+*   **Root Cause**: ambiguous imports in `middleware.js` allowed Node.js modules to leak into the Edge environment.
+*   **Resolution:**
+    1.  **Architecture**: Created `lib/edge/` as a "Sanitation Zone" for Edge-only code.
+    2.  **Implementation**: Moved session logic to `lib/edge/session.js` (Pure `jose`, no dependencies).
+    3.  **Safety**: `middleware.js` now uses **Static Imports** from `lib/edge/` and includes a global `try/catch` block to expose errors instead of crashing.
+    4.  **Documentation**: Added `docs/ARCHITECTURE.md` to define the rules for future developers.
+
+### 📂 Files Modified
+*   [NEW] `lib/edge/session.js` (The new source of truth for auth)
+*   [MOD] `middleware.js` (Hardened with try/catch and static imports)
+*   [MOD] `lib/auth.js` (Updated to use `lib/edge/session.js`)
+*   [NEW] `docs/ARCHITECTURE.md` (The "Manual")
+
+---
+
 ## 📝 Session Log: 2025-12-24 (Emergency Fix - Middleware 500)
 **Goal**: Fix "MIDDLEWARE_INVOCATION_FAILED" 500 error on production.
 

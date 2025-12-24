@@ -1,4 +1,4 @@
-import { encrypt, decrypt } from './auth-edge';
+import { encrypt, decrypt } from './edge/session';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import dbConnect from '@/lib/mongodb';
