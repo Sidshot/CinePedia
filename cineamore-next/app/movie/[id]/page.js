@@ -8,6 +8,8 @@ import Movie from '@/models/Movie';
 import mongoose from 'mongoose';
 import { getPosterUrl, getBackdropUrl } from '@/lib/images';
 import staticData from '@/lib/movies.json';
+import { searchMovies } from '@/lib/tmdb'; // New Import
+import StreamingPlayer from '@/components/StreamingPlayer'; // New Import
 
 // Force dynamic rendering if params are not known static (which they aren't)
 // actually in Next 13+ app dir, dynamic segments are dynamic by default if not generated static.
@@ -112,6 +114,23 @@ export default async function MoviePage({ params }) {
     const posterUrl = getPosterUrl(movie.title, movie.year, movie.poster);
     const backdropUrl = getBackdropUrl(movie.title, movie.year, movie.backdrop);
 
+    // --- NEW: Streaming Integration (Dynamic TMDB Lookup) ---
+    // Since we don't store tmdbId, we fetch it on the fly.
+    // This is server-side, so it's fast and doesn't expose keys.
+    let tmdbId = null;
+    try {
+        if (movie.title) {
+            const results = await searchMovies(movie.title, movie.year);
+            if (results && results.length > 0) {
+                // Best match is usually the first one thanks to year filter
+                tmdbId = results[0].id;
+            }
+        }
+    } catch (e) {
+        console.warn('Streaming lookup failed:', e);
+    }
+    // --------------------------------------------------------
+
     return (
         <main className="min-h-screen p-0 bg-[var(--bg)]">
             {/* Backdrop Hero */}
@@ -209,6 +228,9 @@ export default async function MoviePage({ params }) {
                             {links.length === 0 && <span className="text-[var(--muted)]">No download links available.</span>}
                         </div>
                     </div>
+
+                    {/* Streaming Player */}
+                    {tmdbId && <StreamingPlayer tmdbId={tmdbId} title={movie.title} />}
 
                     {/* External Actions */}
                     <div className="flex flex-wrap gap-3">

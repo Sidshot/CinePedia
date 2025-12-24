@@ -22,6 +22,12 @@
     *   **Solution**: Extracted the inline logic into `<SecureDownloadButton variant="grid" />` component.
     *   **Result**: Fixed crash on Search/Filter.
 
+### 🎥 Streaming Integration
+*   **Feature**: Embedded VidKing player on Movie Details page.
+*   **Method**: Used dynamic server-side TMDB lookup (`Title + Year`) to resolve IDs on the fly since we don't store them.
+*   **Component**: Created `<StreamingPlayer />` with Glassmorphism UI and loading states.
+*   **Status**: Deployed and Verified.
+
 ### 🧹 Cleanup
 *   Removed temporary chaos trigger (`?test_maintenance=true`) from Middleware.
 *   Updated Maintenance Page with correct contact info (X: `__Sithlord__`, Email: `indocurry@proton.me`).
