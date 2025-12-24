@@ -10,6 +10,19 @@
 
 ---
 
+## 📝 Session Log: 2025-12-24 (Emergency Fix - Middleware 500)
+**Goal**: Fix "MIDDLEWARE_INVOCATION_FAILED" 500 error on production.
+
+### 🐛 Bug Fixed
+*   **Issue**: `middleware.js` was importing `lib/auth.js` which contained Node.js-only imports (`mongoose`), causing Edge Runtime to crash.
+*   **Fix**: Split JWT logic into new Edge-safe file `lib/auth-edge.js` (dependency-free) and updated `middleware.js` to import from there.
+*   **Files Changed**:
+    *   `lib/auth-edge.js` (Created)
+    *   `lib/auth.js` (Refactored)
+    *   `middleware.js` (Updated import)
+
+---
+
 ## 📝 Session Log: 2025-12-22 (Contributor Role System)
 **Goal**: Implement contributor role with pending changes approval workflow.
 

@@ -90,7 +90,7 @@ export async function middleware(request) {
         const sessionCookie = request.cookies.get('session')?.value;
         if (sessionCookie) {
             try {
-                const { decrypt } = await import('./lib/auth');
+                const { decrypt } = await import('./lib/auth-edge');
                 const session = await decrypt(sessionCookie);
                 if (session && session.role === 'admin') {
                     // Admin detected - skip rate limiting
@@ -144,7 +144,7 @@ export async function middleware(request) {
         }
 
         try {
-            const { decrypt } = await import('./lib/auth');
+            const { decrypt } = await import('./lib/auth-edge');
             const session = await decrypt(sessionCookie);
 
             if (!session) {
