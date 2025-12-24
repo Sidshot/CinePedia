@@ -192,7 +192,7 @@ export default async function MoviePage({ params }) {
                                         <span>+{links.length - 4} More Links</span>
                                         <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                     </summary>
-                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-64 bg-[var(--card-bg)]/95 backdrop-blur-xl border border-[var(--border)] rounded-xl shadow-2xl p-3 grid gap-2 z-50 animate-fade-in">
+                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-64 bg-[var(--card-bg)]/95 backdrop-blur-xl border border-[var(--border)] rounded-xl shadow-2xl p-3 grid gap-2 z-50 animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
                                         {links.slice(4).map((link, idx) => (
                                             <div key={idx + 4} className="w-full">
                                                 <SecureDownloadButton

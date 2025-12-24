@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SearchBar from './SearchBar';
@@ -8,8 +8,8 @@ import OptimizedPoster from './OptimizedPoster';
 import AddToListButton from './AddToListButton';
 
 // Priority order for genre display
-const PRIORITY_GENRES = ['Mystery', 'Horror', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Comedy', 'Romance'];
-const DEFAULT_VISIBLE_COUNT = 8;
+const PRIORITY_GENRES = ['Mystery', 'Horror', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Comedy', 'Romance', 'Adventure', 'Fantasy', 'Crime', 'Family', 'Animation'];
+const DEFAULT_VISIBLE_COUNT = 16;
 
 export default function MovieGrid({
     initialMovies,
@@ -62,8 +62,17 @@ export default function MovieGrid({
 
     // Handle search submit (on Enter or explicit submit)
     const handleSearch = useCallback((query) => {
+        if (query !== currentSearch) {
+            setIsSearching(true); // Start loading feedback
+        }
         router.push(buildUrl({ search: query, page: 1 }));
-    }, [router, buildUrl]);
+    }, [router, buildUrl, currentSearch]);
+
+
+    // Reset loading state when props change (meaning new data arrived)
+    useEffect(() => {
+        setIsSearching(false);
+    }, [initialMovies, currentSearch, totalCount]);
 
     // Handle sort change
     const handleSortChange = useCallback((e) => {
@@ -118,6 +127,7 @@ export default function MovieGrid({
     };
 
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
 
     return (
         <div className="w-full">
@@ -384,6 +394,15 @@ export default function MovieGrid({
                     {/* Pagination Controls */}
                     <PaginationControls />
                 </>
+            )}
+            {/* Searching Overlay */}
+            {isSearching && (
+                <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="text-xl font-bold text-white">Searching...</div>
+                    </div>
+                </div>
             )}
         </div>
     );

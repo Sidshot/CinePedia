@@ -236,7 +236,11 @@ export default async function Home({ searchParams }) {
                 Wait, if we pass empty array, it might show "No movies found".
                 Let's assume we want the Filter UI. 
             */}
-          <div className="mb-8">
+          {/* We render MovieGrid strictly for the Header Controls. 
+              Sticky Wrapper: ensuring it stays on top while scrolling through genres.
+              z-50 guarantees it's above everything.
+          */}
+          <div className="sticky top-0 z-50 mb-8 py-2 bg-[var(--bg)]/95 backdrop-blur-xl border-b border-white/5 shadow-sm transition-all">
             <MovieGrid
               initialMovies={[]}
               allGenres={allGenres}
