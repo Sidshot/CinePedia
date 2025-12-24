@@ -153,6 +153,14 @@ export default async function MoviePage({ params }) {
                 <div className="flex flex-col gap-6">
                     <div className="rounded-2xl overflow-hidden shadow-2xl border border-white/10 aspect-[2/3] relative group">
                         <img src={posterUrl} className="w-full h-full object-cover" alt={movie.title} />
+
+                        {/* TMDB Rating Badge - Always Visible */}
+                        <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xl z-10">
+                            <span className="text-yellow-400 text-base">★</span>
+                            <span className="text-white text-sm font-bold">
+                                {movie.tmdbRating && movie.tmdbRating > 0 ? movie.tmdbRating.toFixed(1) : 'NR'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
