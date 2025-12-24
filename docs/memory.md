@@ -37,6 +37,11 @@
 *   **Touch Feedback**: Added global `active:scale-96` state to buttons and links for better touch response.
 *   **Mobile Streaming**: Added `playsinline` and `webkit-playsinline` to player iframe to fix mobile playback issues.
 
+*   **Mobile Streaming**: Added `playsinline` and `webkit-playsinline` to player iframe to fix mobile playback issues.
+
+### 🔧 Bug Fixes
+*   **Desktop Sticky Header**: Fixed an issue where genres were sticking along with the search bar on desktop. Root cause was a double-sticky definition in `app/page.js`, which was removed to let `MovieGrid.js` handle the behavior correctly.
+
 ### 🧹 Cleanup
 *   Removed temporary chaos trigger (`?test_maintenance=true`) from Middleware.
 *   Updated Maintenance Page with correct contact info (X: `__Sithlord__`, Email: `indocurry@proton.me`).
