@@ -11,6 +11,8 @@ import AddToListButton from './AddToListButton';
 const PRIORITY_GENRES = ['Mystery', 'Horror', 'Drama', 'Thriller', 'Action', 'Sci-Fi', 'Comedy', 'Romance', 'Adventure', 'Fantasy', 'Crime', 'Family', 'Animation'];
 const DEFAULT_VISIBLE_COUNT = 16;
 
+import SecureDownloadButton from './SecureDownloadButton';
+
 export default function MovieGrid({
     initialMovies,
     allGenres = [],
@@ -297,61 +299,23 @@ export default function MovieGrid({
                                     {/* Actions Row - z-10 ensures it's above card-gloss ::after */}
                                     <div className="relative z-10 grid grid-cols-2 gap-2 mt-2 pt-3 border-t border-white/5">
                                         {/* Secure Download Button */}
+                                        {/* Secure Download Button - Refactored to Component to fix Hook Violation */}
                                         {(() => {
                                             const hasDownload = (movie.downloadLinks?.length > 0) || movie.dl || movie.drive;
-                                            const [isLoading, setIsLoading] = useState(false);
-
-                                            const handleSecureDownload = async (e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                if (!hasDownload || isLoading) return;
-
-                                                setIsLoading(true);
-                                                try {
-                                                    const res = await fetch('/api/download/sign', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            movieId: movie._id || movie.__id,
-                                                            linkIndex: 0 // Default to first link for Grid view
-                                                        })
-                                                    });
-
-                                                    if (!res.ok) {
-                                                        const msg = await res.text();
-                                                        alert(`Download blocked: ${msg}`); // Simple feedback
-                                                        setIsLoading(false);
-                                                        return;
-                                                    }
-
-                                                    const data = await res.json();
-                                                    window.location.href = data.url; // Trigger the secure redirect
-
-                                                    // Optional: Reset loading after a bit (since we navigated away, might not matter)
-                                                    setTimeout(() => setIsLoading(false), 2000);
-
-                                                } catch (error) {
-                                                    console.error(error);
-                                                    setIsLoading(false);
-                                                }
-                                            };
+                                            if (!hasDownload) return (
+                                                <div className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all w-full opacity-30 cursor-not-allowed bg-white/5">
+                                                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+                                                    Download
+                                                </div>
+                                            );
 
                                             return (
-                                                <button
-                                                    onClick={handleSecureDownload}
-                                                    disabled={!hasDownload || isLoading}
-                                                    className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all w-full ${hasDownload
-                                                        ? 'bg-[#3dffb8]/10 text-[#3dffb8] border border-[#3dffb8]/20 hover:bg-[#3dffb8]/20'
-                                                        : 'opacity-30 cursor-not-allowed bg-white/5'
-                                                        }`}
-                                                >
-                                                    {isLoading ? (
-                                                        <svg className="w-4 h-4 animate-spin fill-current" viewBox="0 0 24 24"><path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-5.52 4.48-10 10-10zm0 16c5.52 0 10-4.48 10-10h-2c0 4.42-3.58 8-8 8v2z" /></svg>
-                                                    ) : (
-                                                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
-                                                    )}
-                                                    {isLoading ? 'Verifying...' : 'Download'}
-                                                </button>
+                                                <SecureDownloadButton
+                                                    movieId={movie._id || movie.__id}
+                                                    linkIndex={0}
+                                                    variant="grid"
+                                                    label="Download"
+                                                />
                                             );
                                         })()}
 

@@ -16,6 +16,12 @@
     *   **Display**: Return a clean, dark-mode HTML "Site Under Maintenance" page with a link to Twitter (`@cineamore_app`).
     *   **Security**: Prevents leaking internal paths/logic to visitors.
 
+### 🐛 Code Fixes
+*   **Fix React Minified Error #310**:
+    *   **Cause**: `MovieGrid.js` broke the "Rules of Hooks" by calling `useState` inside a loop (inline IIFE).
+    *   **Solution**: Extracted the inline logic into `<SecureDownloadButton variant="grid" />` component.
+    *   **Result**: Fixed crash on Search/Filter.
+
 ### 🧹 Cleanup
 *   Removed temporary chaos trigger (`?test_maintenance=true`) from Middleware.
 *   Updated Maintenance Page with correct contact info (X: `__Sithlord__`, Email: `indocurry@proton.me`).

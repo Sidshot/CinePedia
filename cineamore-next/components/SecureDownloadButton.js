@@ -49,9 +49,25 @@ export default function SecureDownloadButton({
     };
 
     if (variant === 'grid') {
-        // Logic mainly handled inline in grid for layout reasons, but could be unified.
-        // For now this component is primarily for the detail page or generic usage.
-        return null;
+        const hasDownload = (!!movieId && linkIndex === 0);
+
+        return (
+            <button
+                onClick={handleSecureDownload}
+                disabled={!hasDownload || isLoading}
+                className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all w-full ${hasDownload
+                    ? 'bg-[#3dffb8]/10 text-[#3dffb8] border border-[#3dffb8]/20 hover:bg-[#3dffb8]/20'
+                    : 'opacity-30 cursor-not-allowed bg-white/5'
+                    }`}
+            >
+                {isLoading ? (
+                    <svg className="w-4 h-4 animate-spin fill-current" viewBox="0 0 24 24"><path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-5.52 4.48-10 10-10zm0 16c5.52 0 10-4.48 10-10h-2c0 4.42-3.58 8-8 8v2z" /></svg>
+                ) : (
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></svg>
+                )}
+                {isLoading ? 'Verifying...' : 'Download'}
+            </button>
+        );
     }
 
     // Default Style (Detail Page)
