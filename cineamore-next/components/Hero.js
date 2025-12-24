@@ -51,18 +51,29 @@ export default function Hero({ movies }) {
                 <div className="flex gap-4 items-center mb-6 text-white/90 text-lg">
                     {randomMovie ? (
                         <>
-                            <span className="bg-[var(--accent)] text-[var(--bg)] px-3 py-1 rounded-md font-bold text-xs">{randomMovie.year}</span>
-                            <span className="backdrop-blur-md bg-white/10 px-3 py-1 rounded-md text-sm border border-white/20">{randomMovie.director}</span>
+                            <span className="bg-[var(--accent)] text-black px-3 py-1 rounded-md font-bold text-xs">{randomMovie.year}</span>
+                            <span className="backdrop-blur-md bg-white/10 px-3 py-1 rounded-md text-sm border border-white/20">{randomMovie.director || 'Unknown'}</span>
                         </>
                     ) : (
-                        <span className="bg-[var(--accent)] text-[var(--bg)] px-3 py-1 rounded-md font-bold text-xs">V2 BETA</span>
+                        <span className="bg-[var(--accent)] text-black px-3 py-1 rounded-md font-bold text-xs">V2 BETA</span>
                     )}
                 </div>
                 {randomMovie && (
-                    <Link href={`/movie/${randomMovie._id || randomMovie.__id}`} className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-bold hover:bg-[var(--accent)] transition-colors">
-                        View Details
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                    </Link>
+                    <div className="flex flex-wrap gap-4">
+                        {/* High Contrast White Gradient Button */}
+                        <Link href={`/movie/${randomMovie._id || randomMovie.__id}`}
+                            className="inline-flex items-center gap-3 bg-gradient-to-b from-white to-gray-200 text-black px-8 py-3.5 rounded-full font-extrabold text-lg hover:brightness-110 hover:-translate-y-1 transition-all shadow-[0_0_20px_rgba(255,255,255,0.4)]">
+                            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            Play Now
+                        </Link>
+
+                        {/* Glassmorphism Info Button */}
+                        <Link href={`/movie/${randomMovie._id || randomMovie.__id}`}
+                            className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 py-3.5 rounded-full font-bold text-lg hover:bg-white/20 hover:-translate-y-1 transition-all">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            More Info
+                        </Link>
+                    </div>
                 )}
             </div>
         </section>

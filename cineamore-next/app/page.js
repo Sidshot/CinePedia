@@ -258,6 +258,11 @@ export default async function Home({ searchParams }) {
             />
           </div>
 
+          {/* 0. Top 10 Trending Row (Big Numbers) - NEW */}
+          {trendingMovies.length > 0 && (
+            <TrendingRow movies={trendingMovies} />
+          )}
+
           {/* 1. Recently Added Row */}
           {recentlyAdded.length > 0 && (
             <GenreRow

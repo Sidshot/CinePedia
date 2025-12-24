@@ -23,9 +23,8 @@ export default function GenreRow({ title, movies, genreId, viewAllUrl }) {
 
     return (
         <section className="mb-12 relative group/section">
-            <div className="flex items-center justify-between px-1 mb-4">
-                <h2 className="text-2xl font-bold text-[var(--fg)] flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-[var(--accent)] rounded-full inline-block"></span>
+            <div className="flex items-center justify-between pl-4 mb-4 border-l-4 border-[var(--accent)]">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-[var(--fg)] tracking-wide uppercase">
                     {title}
                 </h2>
                 <Link

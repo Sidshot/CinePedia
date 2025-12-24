@@ -42,6 +42,11 @@
 ### 🔧 Bug Fixes
 *   **Desktop Sticky Header**: Fixed an issue where genres were sticking along with the search bar on desktop. Root cause was a double-sticky definition in `app/page.js`, which was removed to let `MovieGrid.js` handle the behavior correctly.
 
+### 🎨 Visual Upgrades (Competitor Emulation)
+*   **Top 10 Trending**: Implemented a "Top of the Day" row with **Big SVG Numerals (1-10)** behind posters. Uses a daily seeded shuffle of high-rated movies (>6/10).
+*   **Hero Section**: Updated "Play" button to a **White Gradient** style and "More Info" to a cleaner Glassmorphism style for higher contrast.
+*   **Accent Headers**: Added bold vertical accent bars to all section headers to match the competitor's premium look.
+
 ### 🧹 Cleanup
 *   Removed temporary chaos trigger (`?test_maintenance=true`) from Middleware.
 *   Updated Maintenance Page with correct contact info (X: `__Sithlord__`, Email: `indocurry@proton.me`).

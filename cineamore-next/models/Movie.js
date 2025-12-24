@@ -26,6 +26,7 @@ const MovieSchema = new mongoose.Schema({
     notes: String, // Editor's Notes
     ratingSum: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    tmdbRating: { type: Number, default: 0, index: -1 }, // NEW: Sourced from TMDB for Top 10 sorting
     downloadLinks: [{
         label: String,
         url: String,
