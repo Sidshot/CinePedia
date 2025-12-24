@@ -109,15 +109,41 @@ export async function middleware(request) {
         return NextResponse.next();
 
     } catch (error) {
-        console.error('Middleware Error:', error);
-        // Return a JSON error instead of crashing hard to diagnose
-        return new NextResponse(JSON.stringify({
-            error: 'Middleware Error',
-            details: error.message,
-            stack: error.stack
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
+        console.error('CRITICAL MIDDLEWARE ERROR:', error);
+
+        // 🛡️ SECURITY & UX: Never show stack traces to users.
+        // Return a friendly Maintenance Page instead.
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Maintenance - CineAmore</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #0a0a0a; color: #ededed; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; padding: 20px; }
+                .container { max-width: 400px; }
+                h1 { margin-bottom: 10px; font-size: 24px; }
+                p { color: #888; line-height: 1.6; margin-bottom: 20px; }
+                .btn { display: inline-block; background: #ededed; color: #000; text-decoration: none; padding: 10px 20px; border-radius: 9999px; font-weight: 500; font-size: 14px; transition: opacity 0.2s; }
+                .btn:hover { opacity: 0.9; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Site Under Maintenance</h1>
+                <p>We are currently performing scheduled maintenance to improve your experience. We'll be back shortly.</p>
+                <a href="https://twitter.com/cineamore_app" target="_blank" class="btn">Contact us on Twitter</a>
+            </div>
+        </body>
+        </html>
+        `;
+
+        return new NextResponse(html, {
+            status: 503,
+            headers: {
+                'Content-Type': 'text/html',
+                'Cache-Control': 'no-store'
+            }
         });
     }
 }

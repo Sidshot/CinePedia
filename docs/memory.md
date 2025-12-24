@@ -8,6 +8,14 @@
 *   **Database:** MongoDB Atlas (`cluster0.lallguq.mongodb.net/cinepedia`)
 *   **Pending:** Pushing contributor system update
 
+### 🛡️ Friendly Error Design (UX)
+*   **Problem**: Critical errors (like the 500 or Uncaught Exceptions) were showing raw JSON stack traces to users.
+*   **Fix**: Updated `middleware.js` global catch block.
+*   **Behavior**:
+    *   **Log**: `console.error` the real error for Vercel Logs.
+    *   **Display**: Return a clean, dark-mode HTML "Site Under Maintenance" page with a link to Twitter (`@cineamore_app`).
+    *   **Security**: Prevents leaking internal paths/logic to visitors.
+
 ---
 
 ## 📝 Session Log: 2025-12-24 (Circuit Breaker Implementation)
