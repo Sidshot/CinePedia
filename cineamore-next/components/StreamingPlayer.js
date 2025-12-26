@@ -56,6 +56,25 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
 
     return (
         <div className="w-full mt-10 animate-fade-in relative z-20 mx-auto">
+            {/* AD WARNING BANNER */}
+            <div className="mb-6 bg-gradient-to-r from-orange-600/20 to-red-600/20 border-2 border-orange-500/40 rounded-xl p-4 backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                    <div className="text-2xl flex-shrink-0">⚠️</div>
+                    <div className="space-y-1">
+                        <h3 className="text-orange-400 font-bold text-lg">Third-Party Streaming Notice</h3>
+                        <p className="text-white text-sm leading-relaxed">
+                            This streaming service is provided by third-party integrations and <span className="font-bold text-orange-300">may contain ads</span> that are beyond our control.
+                        </p>
+                        <p className="text-orange-200 font-semibold text-sm mt-2 flex items-center gap-2">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                            </svg>
+                            RECOMMENDED: Use an adblocker for the best experience
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Minimalist Glass Header with Source Selector */}
             <div className="relative z-50 flex items-center gap-3 mb-6 px-4 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg w-fit">
                 <div className="p-2 bg-yellow-500/20 rounded-full">
