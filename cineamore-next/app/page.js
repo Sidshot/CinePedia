@@ -108,7 +108,7 @@ export default async function Home({ searchParams }) {
         const genrePromises = HOME_GENRES.map(async (genre) => {
           const movies = await Movie.find({ genre: genre, 'visibility.state': 'visible' })
             .sort({ year: -1, addedAt: -1 }) // Sort by Year Newest -> Oldest
-            .select('title year director poster __id addedAt downloadLinks genre')
+            .select('title year director poster __id addedAt downloadLinks genre tmdbRating')
             .slice('downloadLinks', 1) // OPTIMIZATION
             .limit(18)
             .lean();
