@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import OptimizedPoster from './OptimizedPoster';
 import AddToListButton from './AddToListButton';
 
-export default function GenreRow({ title, movies, genreId, viewAllUrl }) {
+function GenreRow({ title, movies, genreId, viewAllUrl }) {
     const scrollContainerRef = useRef(null);
 
     // Determine the link target
@@ -56,51 +57,140 @@ export default function GenreRow({ title, movies, genreId, viewAllUrl }) {
                 {/* Horizontal Scroll Container */}
                 <div
                     ref={scrollContainerRef}
-                    className="flex gap-4 overflow-x-auto pb-6 pt-2 px-1 snap-x scrollbar-hide -mx-2 px-2 mask-linear-fade"
+                    className="flex gap-8 overflow-x-auto pb-12 pt-16 px-1 snap-x scrollbar-hide -mx-2 px-2 mask-linear-fade"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                    {movies.map((movie) => (
-                        <div
+                    {movies.map((movie, index) => (
+                        <motion.div
                             key={movie._id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05, duration: 0.3 }}
+                            whileHover={{
+                                scale: 1.08,
+                                y: -10,
+                                rotateY: 5,
+                                transition: { duration: 0.3, ease: 'easeOut' }
+                            }}
                             className="flex-none w-[160px] sm:w-[180px] md:w-[200px] snap-start group/card relative"
                         >
-                            <Link href={`/movie/${movie.__id || movie._id}`} className="block relative aspect-[2/3] rounded-xl overflow-hidden shadow-lg border border-[var(--border)] group-hover/card:border-[var(--accent)] transition-all group-hover/card:scale-105 duration-300 bg-[var(--card-bg)]">
-                                <OptimizedPoster
-                                    src={movie.poster}
-                                    title={movie.title}
-                                    year={movie.year}
-                                    width={200}
-                                    height={300}
-                                    className="w-full h-full object-cover"
-                                />
-
-                                {/* Rating Badge - Always Visible */}
-                                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md border border-white/20 px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg z-10">
+                            {/* Fixed Badges - Outside transform context */}
+                            {/* Rating Badge - Always Visible, No Movement */}
+                            <div className="absolute top-2 left-2 z-50 pointer-events-none">
+                                <div
+                                    className="px-2 py-1 rounded-full flex items-center gap-1 shadow-lg"
+                                    style={{
+                                        backdropFilter: 'blur(8px)',
+                                        WebkitBackdropFilter: 'blur(8px)',
+                                        background: 'rgba(0, 0, 0, 0.6)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}
+                                >
                                     <span className="text-yellow-400 text-xs">★</span>
                                     <span className="text-white text-xs font-bold">
                                         {movie.tmdbRating && movie.tmdbRating > 0 ? movie.tmdbRating.toFixed(1) : 'NR'}
                                     </span>
                                 </div>
+                            </div>
 
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                                    <span className="text-white font-bold text-sm line-clamp-2">{movie.title}</span>
-                                </div>
+                            {/* Quick Add Button - STREAM accent badge */}
+                            <div className="absolute top-2 right-2 z-50 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                <AddToListButton movieId={movie._id || movie.__id} movieTitle={movie.title} variant="icon" />
+                            </div>
 
-                                {/* Quick Add Button */}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover/card:opacity-100 transition-opacity z-10">
-                                    <AddToListButton movieId={movie._id || movie.__id} movieTitle={movie.title} variant="icon" />
+                            {/* Card with transform */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.05, duration: 0.3 }}
+                                whileHover={{
+                                    scale: 1.03,
+                                    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
+                                }}
+                                className="film-tile"
+                                style={{ willChange: 'transform' }}
+                            >
+                                {/* Premium Glass Slab Structure */}
+                                <div className="relative">
+                                    {/* Back Glass Slab - OPTIMIZED */}
+                                    <div
+                                        className="absolute inset-0 rounded-2xl"
+                                        style={{
+                                            transform: 'translate(-10px, -12px) translateZ(0)',
+                                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+                                            backdropFilter: 'blur(12px)',
+                                            WebkitBackdropFilter: 'blur(12px)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                            opacity: 0.25,
+                                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)',
+                                            clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                                            willChange: 'transform'
+                                        }}
+                                    ></div>
+
+                                    {/* Main Content Container */}
+                                    <Link href={`/movie/${movie.__id || movie._id}`} className="block relative aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black"
+                                        style={{
+                                            clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                                            transform: 'translateZ(0)'
+                                        }}
+                                    >
+                                        {/* Poster Layer - GPU Accelerated */}
+                                        <div className="absolute inset-0 z-10" style={{ transform: 'translateZ(0)' }}>
+                                            <OptimizedPoster
+                                                src={movie.poster}
+                                                title={movie.title}
+                                                year={movie.year}
+                                                width={200}
+                                                height={300}
+                                                className="w-full h-full object-cover"
+                                                style={{ filter: 'contrast(0.92) saturate(0.85)' }}
+                                            />
+                                        </div>
+
+                                        {/* Poster Overlay - Bottom gradient */}
+                                        <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-15"></div>
+
+                                        {/* Front Glass Slab - OPTIMIZED with less blur */}
+                                        <div
+                                            className="absolute inset-0 rounded-2xl pointer-events-none z-20"
+                                            style={{
+                                                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08))',
+                                                backdropFilter: 'blur(8px)',
+                                                WebkitBackdropFilter: 'blur(8px)',
+                                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                opacity: 0.35,
+                                                boxShadow: 'inset -1px -1px 2px rgba(255, 255, 255, 0.2), inset 1px 1px 2px rgba(255, 255, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.2)',
+                                                clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                                                transform: 'translateZ(0)'
+                                            }}
+                                        ></div>
+
+                                        {/* Hover Title Overlay */}
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            whileHover={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-3 z-25"
+                                        >
+                                            <span className="text-white font-medium text-sm line-clamp-2">{movie.title}</span>
+                                        </motion.div>
+                                    </Link>
                                 </div>
-                            </Link>
+                            </motion.div>
                             <div className="mt-2 px-1">
                                 <Link href={`/movie/${movie.__id || movie._id}`} className="block">
                                     <h3 className="font-bold text-[var(--fg)] text-sm truncate hover:text-[var(--accent)] transition-colors">{movie.title}</h3>
                                 </Link>
                                 <p className="text-xs text-[var(--muted)]">{movie.year || '—'}</p>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>
         </section>
     );
 }
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export default memo(GenreRow);

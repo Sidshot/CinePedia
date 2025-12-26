@@ -4,18 +4,18 @@ const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 export async function searchMovies(query, year = null) {
-    if (!API_KEY) return { error: 'TMDB_API_KEY missing' };
+    if (!API_KEY) return [];
     if (!query) return [];
 
     try {
         const yearParam = year ? `&year=${year}` : '';
         const res = await fetch(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}${yearParam}&include_adult=false`);
-        if (!res.ok) throw new Error('Failed to fetch from TMDB');
+        if (!res.ok) return [];
         const data = await res.json();
         return data.results ? data.results.slice(0, 5) : []; // Return top 5
     } catch (e) {
-        console.error('TMDB Search Error:', e);
-        return { error: 'Search failed' };
+        // Silent fail like other functions
+        return [];
     }
 }
 

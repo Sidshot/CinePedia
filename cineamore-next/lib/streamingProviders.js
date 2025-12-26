@@ -4,14 +4,16 @@ export const STREAMING_PROVIDERS = [
         name: 'Alpha',
         baseUrl: 'https://www.vidking.net/embed/movie',
         type: 'vidking',
-        urlType: 'path' // Uses /{tmdbId}
+        urlType: 'path', // Uses /{tmdbId}
+        supportsSandbox: true // VidKing works fine with sandbox
     },
     {
         id: 'beta',
         name: 'Beta',
         baseUrl: 'https://2embed.cc/embed',
         type: 'embed',
-        urlType: 'path' // Uses /{tmdbId}
+        urlType: 'path', // Uses /{tmdbId}
+        supportsSandbox: true // 2embed works with permissive sandbox
     },
     {
         id: 'gamma',
@@ -19,7 +21,8 @@ export const STREAMING_PROVIDERS = [
         baseUrl: 'https://hnembed.cc/embed/movie',
         type: 'embed',
         urlType: 'query', // Uses ?tmdb={tmdbId}
-        queryParam: 'tmdb'
+        queryParam: 'tmdb',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'delta',
@@ -27,14 +30,16 @@ export const STREAMING_PROVIDERS = [
         baseUrl: 'https://www.superembed.stream/embed/movie',
         type: 'embed',
         urlType: 'query',
-        queryParam: 'tmdb'
+        queryParam: 'tmdb',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'epsilon',
         name: 'Epsilon',
         baseUrl: 'https://moviesapi.club/movie',
         type: 'embed',
-        urlType: 'path'
+        urlType: 'path',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'zeta',
@@ -42,35 +47,40 @@ export const STREAMING_PROVIDERS = [
         baseUrl: 'https://vidsrc.me/embed/movie',
         type: 'embed',
         urlType: 'query',
-        queryParam: 'tmdb'
+        queryParam: 'tmdb',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'eta',
         name: 'Eta',
         baseUrl: 'https://vidsrc.xyz/embed/movie',
         type: 'embed',
-        urlType: 'path'
+        urlType: 'path',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'theta',
         name: 'Theta',
         baseUrl: 'https://embed.su/embed/movie',
         type: 'embed',
-        urlType: 'path'
+        urlType: 'path',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'iota',
         name: 'Iota',
         baseUrl: 'https://player.smashy.stream/movie',
         type: 'embed',
-        urlType: 'path'
+        urlType: 'path',
+        supportsSandbox: false // Blocks sandboxed iframes
     },
     {
         id: 'kappa',
         name: 'Kappa',
         baseUrl: 'https://player.autoembed.cc/embed/movie',
         type: 'embed',
-        urlType: 'path'
+        urlType: 'path',
+        supportsSandbox: false // Blocks sandboxed iframes
     }
 ];
 

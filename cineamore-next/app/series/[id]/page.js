@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import SeriesStreamingPlayer from '@/components/SeriesStreamingPlayer';
 
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate series pages every hour for fresh data
+export const revalidate = 3600; // 1 hour
 
 export default async function SeriesDetailPage({ params, searchParams }) {
     const { id } = await params;

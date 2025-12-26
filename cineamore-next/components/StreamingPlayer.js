@@ -56,8 +56,8 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
 
     return (
         <div className="w-full mt-10 animate-fade-in relative z-20 mx-auto">
-            {/* Minimalist Glass Header with Source Selector - Added z-50 to fix dropdown clipping */}
-            <div className="relative z-50 flex flex-wrap items-center gap-3 mb-6 px-4 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg w-fit">
+            {/* Minimalist Glass Header with Source Selector */}
+            <div className="relative z-50 flex items-center gap-3 mb-6 px-4 py-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-lg w-fit">
                 <div className="p-2 bg-yellow-500/20 rounded-full">
                     <span className="text-yellow-400 text-lg leading-none">▶</span>
                 </div>
@@ -65,36 +65,38 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
                 <h3 className="text-lg font-bold text-white tracking-wide hidden sm:block">Streaming</h3>
 
                 {/* Source Selector Dropdown */}
-                <div className="relative ml-2">
+                <div className="relative">
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-sm font-medium text-white border border-white/5"
+                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-200 text-sm font-medium text-white border border-white/10 active:scale-95"
                     >
-                        <span className="text-yellow-400/80">Source:</span>
-                        <span>{currentProvider.name}</span>
-                        <svg className={`w - 4 h - 4 transition - transform ${isDropdownOpen ? 'rotate-180' : ''} `} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="text-yellow-400/80 text-xs">Source:</span>
+                        <span className="font-semibold">{currentProvider.name}</span>
+                        <svg className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 
-                    {/* Dropdown Menu */}
+                    {/* Dropdown Menu - Pill Shaped Options */}
                     {isDropdownOpen && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                            <div className="absolute top-full left-0 mt-2 w-48 py-2 bg-[#1a1a1a]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                            <div className="absolute top-full right-0 mt-3 min-w-[200px] p-2 bg-[#0a0a0a]/98 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto">
                                 {STREAMING_PROVIDERS.map((provider) => (
                                     <button
                                         key={provider.id}
                                         onClick={() => handleProviderChange(provider.id)}
-                                        className={`w - full text - left px - 4 py - 2 text - sm transition - colors flex items - center justify - between
+                                        className={`w-full text-left px-4 py-3 mb-1.5 last:mb-0 rounded-full text-sm font-medium transition-all duration-200 flex items-center justify-between active:scale-95
                                             ${activeProviderId === provider.id
-                                                ? 'bg-yellow-500/20 text-yellow-400'
-                                                : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                                            } `}
+                                                ? 'bg-yellow-500/20 text-yellow-400 shadow-[0_0_20px_-5px_rgba(234,179,8,0.3)]'
+                                                : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                                            }`}
                                     >
                                         <span>{provider.name}</span>
                                         {activeProviderId === provider.id && (
-                                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]"></span>
+                                            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
                                         )}
                                     </button>
                                 ))}
@@ -103,12 +105,13 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
                     )}
                 </div>
 
-                <div className="text-xs text-[var(--muted)] ml-auto sm:ml-2">
-                    If player fails, try another source.
+                <div className="text-xs text-gray-400/70 ml-4 hidden md:block">
+                    If player fails, try another source
                 </div>
             </div>
 
-            <div className="relative w-full bg-black rounded-3xl overflow-hidden border border-white/5 shadow-[0_0_50px_-10px_rgba(251,191,36,0.3)] group hover:shadow-[0_0_80px_-10px_rgba(251,191,36,0.5)] transition-shadow duration-700" style={{ height: 'calc(100vh - 200px)', minHeight: '600px' }}>
+            {/* Player Container - Responsive Aspect Ratio */}
+            <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden border border-white/5 shadow-[0_0_50px_-10px_rgba(251,191,36,0.3)] group hover:shadow-[0_0_80px_-10px_rgba(251,191,36,0.5)] transition-shadow duration-700">
                 {/* Loading State */}
                 {isLoading && !hasError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 z-10 pointer-events-none">
@@ -124,6 +127,10 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
                     ref={iframeRef}
                     src={embedUrl}
                     key={embedUrl} // Force re-render on url change
+                    {...(currentProvider.supportsSandbox && {
+                        sandbox: "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                    })}
+                    referrerPolicy="no-referrer"
                     className={`w-full h-full transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
                     frameBorder="0"
                     allow="autoplay; fullscreen; picture-in-picture"

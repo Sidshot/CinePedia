@@ -8,8 +8,7 @@ import Movie from '@/models/Movie';
 import mongoose from 'mongoose';
 import { getPosterUrl, getBackdropUrl } from '@/lib/images';
 import staticData from '@/lib/movies.json';
-import { searchMovies } from '@/lib/tmdb'; // New Import
-import StreamingPlayer from '@/components/StreamingPlayer'; // New Import
+import ClientStreamingLoader from '@/components/ClientStreamingLoader';
 
 // Force dynamic rendering if params are not known static (which they aren't)
 // actually in Next 13+ app dir, dynamic segments are dynamic by default if not generated static.
@@ -114,22 +113,7 @@ export default async function MoviePage({ params }) {
     const posterUrl = getPosterUrl(movie.title, movie.year, movie.poster);
     const backdropUrl = getBackdropUrl(movie.title, movie.year, movie.backdrop);
 
-    // --- NEW: Streaming Integration (Dynamic TMDB Lookup) ---
-    // Since we don't store tmdbId, we fetch it on the fly.
-    // This is server-side, so it's fast and doesn't expose keys.
-    let tmdbId = null;
-    try {
-        if (movie.title) {
-            const results = await searchMovies(movie.title, movie.year);
-            if (results && results.length > 0) {
-                // Best match is usually the first one thanks to year filter
-                tmdbId = results[0].id;
-            }
-        }
-    } catch (e) {
-        console.warn('Streaming lookup failed:', e);
-    }
-    // --------------------------------------------------------
+    // Streaming is now handled client-side to prevent ISR caching issues
 
     return (
         <main className="min-h-screen p-0 bg-[var(--bg)]">
@@ -237,8 +221,8 @@ export default async function MoviePage({ params }) {
                         </div>
                     </div>
 
-                    {/* Streaming Player */}
-                    {tmdbId && <StreamingPlayer tmdbId={tmdbId} title={movie.title} />}
+                    {/* Streaming Player - Client-side to prevent caching issues */}
+                    <ClientStreamingLoader title={movie.title} year={movie.year} />
 
                     {/* External Actions */}
                     <div className="flex flex-wrap gap-3">
@@ -275,6 +259,9 @@ export default async function MoviePage({ params }) {
 
 // NextJS 15 requires async params
 export const dynamicParams = true;
+
+// ISR: Revalidate popular movie pages every hour
+export const revalidate = 3600; // 1 hour in seconds
 
 async function fetchWikipediaSummary(title, year) {
     try {

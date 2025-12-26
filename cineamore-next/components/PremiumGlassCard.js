@@ -1,0 +1,134 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+
+/**
+ * Premium Glassmorphism Card Component
+ * Implements dual glass slab design with chamfered edges, offset positioning, and iOS-style effects
+ */
+export default function PremiumGlassCard({
+    href,
+    posterSrc,
+    posterAlt,
+    rating,
+    accentBadge,
+    title,
+    subtitle,
+    index = 0,
+    width = 200,
+    height = 300
+}) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+            whileHover={{
+                scale: 1.03,
+                transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
+            }}
+            className="relative"
+            style={{ willChange: 'transform' }}
+        >
+            {/* Rating Badge */}
+            <div className="absolute top-2 left-2 z-50 pointer-events-none">
+                <div
+                    className="px-2 py-1 rounded-full flex items-center gap-1 shadow-lg"
+                    style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                >
+                    <span className="text-yellow-400 text-xs">★</span>
+                    <span className="text-white text-xs font-bold">{rating || 'NR'}</span>
+                </div>
+            </div>
+
+            {/* Accent Badge */}
+            {accentBadge && (
+                <div className="absolute top-2 right-2 bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-50 shadow-lg">
+                    {accentBadge}
+                </div>
+            )}
+
+            {/* Premium Glass Slab Structure */}
+            <div className="relative">
+                {/* Back Glass Slab - OPTIMIZED: 12px blur instead of 25px */}
+                <div
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                        transform: 'translate(-10px, -12px) translateZ(0)',
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        opacity: 0.25,
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)',
+                        clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                        willChange: 'transform'
+                    }}
+                ></div>
+
+                {/* Main Content Container */}
+                <Link href={href} className="block relative aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black"
+                    style={{
+                        clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                        transform: 'translateZ(0)'
+                    }}
+                >
+                    {/* Poster Layer - GPU Accelerated */}
+                    <div className="absolute inset-0 z-10" style={{ transform: 'translateZ(0)' }}>
+                        <img
+                            src={posterSrc}
+                            alt={posterAlt}
+                            width={width}
+                            height={height}
+                            className="w-full h-full object-cover"
+                            style={{ filter: 'contrast(0.92) saturate(0.85)' }}
+                        />
+                    </div>
+
+                    {/* Poster Overlay - Bottom gradient */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-15"></div>
+
+                    {/* Front Glass Slab - Medium blur with edge glow */}
+                    <div
+                        className="absolute inset-0 rounded-2xl pointer-events-none z-20"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08))',
+                            backdropFilter: 'blur(15px)',
+                            WebkitBackdropFilter: 'blur(15px)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            opacity: 0.35,
+                            boxShadow: 'inset -1px -1px 2px rgba(255, 255, 255, 0.2), inset 1px 1px 2px rgba(255, 255, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.2)',
+                            clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)'
+                        }}
+                    ></div>
+
+                    {/* Hover Title Overlay */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-3 z-25"
+                    >
+                        <span className="text-white font-medium text-sm line-clamp-2">{title}</span>
+                    </motion.div>
+                </Link>
+            </div>
+
+            {/* Title and Subtitle */}
+            <div className="mt-2 px-1">
+                <Link href={href} className="block">
+                    <h3 className="font-bold text-[var(--fg)] text-sm truncate hover:text-[var(--accent)] transition-colors">
+                        {title}
+                    </h3>
+                </Link>
+                <p className="text-xs text-[var(--muted)]">{subtitle || '—'}</p>
+            </div>
+        </motion.div>
+    );
+}

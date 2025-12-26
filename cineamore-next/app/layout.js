@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import UserMenu from "@/components/UserMenu";
 import Footer from "@/components/Footer";
 import GlobalStickySearch from "@/components/GlobalStickySearch";
+import LayoutAnimationWrapper from "@/components/LayoutAnimationWrapper";
 import { Geist, Geist_Mono } from "next/font/google";
 import { auth } from "@/lib/auth-next";
 import { Analytics } from "@vercel/analytics/react";
@@ -55,7 +56,9 @@ export default async function RootLayout({ children }) {
         <SpeedInsights />
         <div className="min-h-screen flex flex-col">
           <div className="flex-1">
-            {children}
+            <LayoutAnimationWrapper>
+              {children}
+            </LayoutAnimationWrapper>
           </div>
           <Footer />
         </div>

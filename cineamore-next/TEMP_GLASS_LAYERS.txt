@@ -1,0 +1,5 @@
+                                    {/* Specular Highlight - Side reflection for glass depth */}
+                                    <div className="absolute top-0 left-0 w-[40%] h-full bg-gradient-to-r from-white/12 to-transparent pointer-events-none z-35 opacity-50"></div>
+                                    
+                                    {/* Glass Gloss Overlay - Creates glass pouch effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/4 to-white/8 pointer-events-none z-32 rounded-2xl"></div>

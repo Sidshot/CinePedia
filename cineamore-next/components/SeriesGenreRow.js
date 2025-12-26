@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
+import { motion } from 'framer-motion';
 
-export default function SeriesGenreRow({ title, genreId, series }) {
+function SeriesGenreRow({ title, genreId, series }) {
     const scrollRef = useRef(null);
 
     if (!series || series.length === 0) return null;
@@ -38,10 +39,10 @@ export default function SeriesGenreRow({ title, genreId, series }) {
             <div className="relative">
                 <div
                     ref={scrollRef}
-                    className="flex gap-4 overflow-x-auto py-4 px-4 scrollbar-hide"
+                    className="flex gap-8 overflow-x-auto py-10 px-4 scrollbar-hide"
                 >
-                    {series.map(s => (
-                        <SeriesCard key={s.id} series={s} />
+                    {series.map((s, index) => (
+                        <SeriesCard key={s.id} series={s} index={index} />
                     ))}
                 </div>
 
@@ -63,56 +64,129 @@ export default function SeriesGenreRow({ title, genreId, series }) {
     );
 }
 
-// Series Card Component - each card is its own group
-function SeriesCard({ series }) {
+// Wrap with React.memo
+export default memo(SeriesGenreRow);
+
+
+// Series Card Component - Premium glassmorphism version
+function SeriesCard({ series, index }) {
     const posterUrl = series.poster_path
         ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
         : null;
     const year = series.first_air_date?.split('-')[0] || '';
 
     return (
-        <Link
-            href={`/series/${series.id}`}
-            className="group/card flex-none w-[160px] sm:w-[180px] relative"
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+            whileHover={{
+                scale: 1.03,
+                transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
+            }}
+            className="flex-none w-[160px] sm:w-[180px] relative"
+            style={{ willChange: 'transform' }}
         >
-            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-[var(--card-bg)] border border-white/10 group-hover/card:border-orange-600/50 transition-all group-hover/card:scale-105 duration-300 shadow-lg">
-                {posterUrl ? (
-                    <img
-                        src={posterUrl}
-                        alt={series.name}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[var(--muted)]">
-                        No Poster
-                    </div>
-                )}
-
-                {/* Rating Badge */}
-                <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md border border-white/20 px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg">
+            {/* Fixed Badges */}
+            <div className="absolute top-2 left-2 z-50 pointer-events-none">
+                <div
+                    className="px-2 py-1 rounded-full flex items-center gap-1 shadow-lg"
+                    style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                    }}
+                >
                     <span className="text-yellow-400 text-xs">★</span>
                     <span className="text-white text-xs font-bold">
                         {series.vote_average ? series.vote_average.toFixed(1) : 'NR'}
                     </span>
                 </div>
+            </div>
 
-                {/* Stream Badge */}
-                <div className="absolute top-2 right-2 bg-orange-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                    STREAM
-                </div>
+            <div className="absolute top-2 right-2 bg-orange-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-50 shadow-lg">
+                STREAM
+            </div>
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="text-white font-bold text-sm line-clamp-2">{series.name}</span>
-                </div>
+            {/* Premium Glass Slab Structure */}
+            <div className="relative">
+                {/* Back Glass Slab */}
+                <div
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                        transform: 'translate(-10px, -12px) translateZ(0)',
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        opacity: 0.25,
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)',
+                        clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                        willChange: 'transform'
+                    }}
+                ></div>
+
+                <Link href={`/series/${series.id}`} className="block relative aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black"
+                    style={{
+                        clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                        transform: 'translateZ(0)'
+                    }}
+                >
+                    {/* Poster */}
+                    <div className="absolute inset-0 z-10" style={{ transform: 'translateZ(0)' }}>
+                        {posterUrl ? (
+                            <img
+                                src={posterUrl}
+                                alt={series.name}
+                                className="w-full h-full object-cover"
+                                style={{ filter: 'contrast(0.92) saturate(0.85)' }}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[var(--muted)]">
+                                No Poster
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Poster Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-15"></div>
+
+                    {/* Front Glass Slab */}
+                    <div
+                        className="absolute inset-0 rounded-2xl pointer-events-none z-20"
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08))',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            opacity: 0.35,
+                            boxShadow: 'inset -1px -1px 2px rgba(255, 255, 255, 0.2), inset 1px 1px 2px rgba(255, 255, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.2)',
+                            clipPath: 'polygon(8px 0%, calc(100% - 8px) 0%, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0% calc(100% - 8px), 0% 8px)',
+                            transform: 'translateZ(0)'
+                        }}
+                    ></div>
+
+                    {/* Hover Overlay */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-3 z-25"
+                    >
+                        <span className="text-white font-medium text-sm line-clamp-2">{series.name}</span>
+                    </motion.div>
+                </Link>
             </div>
 
             <div className="mt-2 px-1">
-                <h3 className="font-bold text-[var(--fg)] text-sm truncate group-hover/card:text-orange-400 transition-colors">
-                    {series.name}
-                </h3>
+                <Link href={`/series/${series.id}`} className="block">
+                    <h3 className="font-bold text-[var(--fg)] text-sm truncate hover:text-orange-400 transition-colors">
+                        {series.name}
+                    </h3>
+                </Link>
                 <p className="text-xs text-[var(--muted)]">{year || '—'}</p>
             </div>
-        </Link>
+        </motion.div >
     );
 }
