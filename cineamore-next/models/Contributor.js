@@ -42,8 +42,8 @@ const ContributorSchema = new mongoose.Schema({
     }
 });
 
-// Index for quick username lookup
-ContributorSchema.index({ username: 1 });
+// Index for quick username lookup is already handled by unique: true
+// ContributorSchema.index({ username: 1 });
 
 // Force schema refresh in development
 if (mongoose.models.Contributor) {

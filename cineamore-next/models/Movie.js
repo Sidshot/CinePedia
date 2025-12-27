@@ -59,7 +59,7 @@ const MovieSchema = new mongoose.Schema({
 MovieSchema.index({ addedAt: -1 });
 MovieSchema.index({ year: -1 });
 MovieSchema.index({ genre: 1 }); // Performance fix for Genre Rows
-MovieSchema.index({ 'visibility.state': 1 }); // Performance fix for general filtering
+// MovieSchema.index({ 'visibility.state': 1 }); // Handled by field definition
 MovieSchema.index({ title: 1 }); // Optimize Regex Search
 MovieSchema.index({ director: 1 }); // Optimize Regex Search
 MovieSchema.index({ original: 1 }); // Optimize Regex Search
