@@ -1292,5 +1292,6 @@ cineamore-next/app/layout.js (Added loader)
 cineamore-next/components/ContentModeToggle.js (Trigger loading)
 cineamore-next/models/Contributor.js (Removed duplicate index)
 cineamore-next/models/Movie.js (Removed duplicate index)
-cineamore-next/components/GlobalLoader.js (Added 5s safety timeout + click-to-dismiss)
+cineamore-next/components/GlobalLoader.js (Premium Design Update)
+cineamore-next/app/loading.js (Premium Design Update)
 ```
