@@ -13,13 +13,13 @@ function getRateLimiter(type) {
         if (process.env.UPSTASH_REDIS_REST_URL) {
             const redis = Redis.fromEnv();
 
-            // Tune limits
+            // Tune limits (Analytics disabled to save bandwidth/quota)
             switch (type) {
-                case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '15 m'), Analytics: true, prefix: 'rl_dl' });
-                case 'api': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), Analytics: true, prefix: 'rl_api' });
-                case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '1 m'), Analytics: true, prefix: 'rl_list' });
-                case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), Analytics: true, prefix: 'rl_mov' });
-                default: return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), Analytics: true, prefix: 'rl_gen' });
+                case 'download': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '15 m'), analytics: false, prefix: 'rl_dl' });
+                case 'api': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), analytics: false, prefix: 'rl_api' });
+                case 'listing': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(100, '1 m'), analytics: false, prefix: 'rl_list' });
+                case 'detail': return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), analytics: false, prefix: 'rl_mov' });
+                default: return new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, '1 m'), analytics: false, prefix: 'rl_gen' });
             }
         }
     } catch (e) {

@@ -8,12 +8,30 @@ const localCache = new Map();
 export function getRateLimit() {
     // PRODUCTION: Use Upstash Redis
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        return new Ratelimit({
-            redis: Redis.fromEnv(),
-            limiter: Ratelimit.slidingWindow(10, '10 s'), // Default safe fallback
-            analytics: true,
-            prefix: '@upstash/ratelimit',
-        });
+        try {
+            const upstashLimiter = new Ratelimit({
+                redis: Redis.fromEnv(),
+                limiter: Ratelimit.slidingWindow(10, '10 s'),
+                analytics: true, // Only enable if quota allows
+                prefix: '@upstash/ratelimit',
+            });
+
+            // FAIL-SAFE PROXY
+            return {
+                limit: async (identifier) => {
+                    try {
+                        return await upstashLimiter.limit(identifier);
+                    } catch (error) {
+                        console.warn('⚠️ Rate Limit Error (Fail Open):', error.message);
+                        // Return a fake success response to allow traffic
+                        return { success: true, limit: 10, remaining: 10, reset: 0 };
+                    }
+                }
+            };
+        } catch (e) {
+            console.warn('Redis Init Error:', e);
+            // Fallthrough to local mock
+        }
     }
 
     // DEVELOPMENT: Mock Implementation using Map
