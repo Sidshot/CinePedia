@@ -37,6 +37,14 @@ export default function UniversalSearch({ initialQuery = '', onSearch }) {
         return () => clearTimeout(timer);
     }, [query]);
 
+    // Close on scroll
+    useEffect(() => {
+        if (!showDropdown) return;
+        const handleScroll = () => setShowDropdown(false);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [showDropdown]);
+
     // Handle search submit
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -99,16 +107,17 @@ export default function UniversalSearch({ initialQuery = '', onSearch }) {
                 }}
             />
 
-            {/* Click outside to close */}
+            {/* Click outside to close - High Z */}
             {showDropdown && (
                 <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-40 bg-black/20"
                     onClick={() => setShowDropdown(false)}
                 />
             )}
         </div>
     );
 }
+
 
 // Memoized Dropdown to prevent re-renders on every keystroke
 const MemoizedResultsDropdown = memo(function ResultsDropdown({ show, results, onResultClick, dropdownRef }) {

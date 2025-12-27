@@ -80,21 +80,31 @@ export default function GlobalStickySearch() {
     const accentColor = isSeriesMode ? 'orange-500' : '[var(--accent)]';
     const accentBg = isSeriesMode ? 'orange-500' : 'yellow-500';
 
+    // Close on scroll (if search is open)
+    useEffect(() => {
+        if (!showDropdown) return;
+        const handleScrollClose = () => {
+            if (window.scrollY > 0) setShowDropdown(false);
+        };
+        window.addEventListener('scroll', handleScrollClose);
+        return () => window.removeEventListener('scroll', handleScrollClose);
+    }, [showDropdown]);
+
     if (!visible) return null;
 
     return (
         <>
-            {/* Backdrop to close dropdown */}
+            {/* Backdrop to close dropdown - High Z but below Search Bar */}
             {showDropdown && (
                 <div
-                    className="fixed inset-0 z-[998]"
+                    className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm"
                     onClick={() => setShowDropdown(false)}
                 />
             )}
 
-            {/* Sticky Search Bar */}
+            {/* Sticky Search Bar Container - Higher Z than backdrop */}
             <div
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-[999] ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+                className={`fixed top-4 left-1/2 -translate-x-1/2 z-[1001] ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
                     }`}
             >
                 <div className="relative">

@@ -35,6 +35,14 @@ export default function SeriesSearch({ initialQuery = '' }) {
         return () => clearTimeout(timer);
     }, [query]);
 
+    // Close on scroll
+    useEffect(() => {
+        if (!showDropdown) return;
+        const handleScroll = () => setShowDropdown(false);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [showDropdown]);
+
     // Handle result click
     const handleResultClick = useCallback((series) => {
         setShowDropdown(false);
@@ -83,7 +91,7 @@ export default function SeriesSearch({ initialQuery = '' }) {
             {/* Click outside to close */}
             {showDropdown && (
                 <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-40 bg-black/20"
                     onClick={() => setShowDropdown(false)}
                 />
             )}
