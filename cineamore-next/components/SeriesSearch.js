@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function SeriesSearch({ initialQuery = '' }) {
@@ -70,44 +70,15 @@ export default function SeriesSearch({ initialQuery = '' }) {
             </div>
 
             {/* Dropdown Results */}
-            {showDropdown && hasResults && (
-                <div
-                    className="absolute top-full left-4 right-4 mt-2 bg-[#1a1a1f] border-2 border-orange-600/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
-                    onMouseDown={(e) => e.preventDefault()}
-                >
-                    <div className="px-4 py-2 bg-orange-600/10 text-orange-400 text-xs font-bold uppercase tracking-wider">
-                        TV Series
-                    </div>
-                    {results.map((series) => (
-                        <button
-                            key={series.tmdbId}
-                            onClick={() => handleResultClick(series)}
-                            className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
-                        >
-                            <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
-                                {series.poster ? (
-                                    <img
-                                        src={series.poster}
-                                        alt={series.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-xs">
-                                        N/A
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-bold text-[var(--fg)] truncate">{series.title}</p>
-                                <p className="text-sm text-[var(--muted)]">{series.year} • ★ {series.tmdbRating?.toFixed(1) || 'N/A'}</p>
-                            </div>
-                            <span className="shrink-0 text-xs bg-orange-600/20 text-orange-400 px-2 py-1 rounded-full">
-                                Stream
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            )}
+            <MemoizedResultsDropdown
+                show={showDropdown && hasResults}
+                results={results}
+                onResultClick={handleResultClick}
+                dropdownRef={(el) => {
+                    // Prevent blur on click. Note: SeriesSearch text input is peer to this dropdown logic.
+                    if (el) el.onmousedown = (e) => e.preventDefault();
+                }}
+            />
 
             {/* Click outside to close */}
             {showDropdown && (
@@ -119,3 +90,48 @@ export default function SeriesSearch({ initialQuery = '' }) {
         </div>
     );
 }
+
+const MemoizedResultsDropdown = memo(function ResultsDropdown({ show, results, onResultClick, dropdownRef }) {
+    if (!show) return null;
+
+    return (
+        <div
+            ref={dropdownRef}
+            className="absolute top-full left-4 right-4 mt-2 bg-[#1a1a1f] border-2 border-orange-600/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
+        >
+            <div className="px-4 py-2 bg-orange-600/10 text-orange-400 text-xs font-bold uppercase tracking-wider">
+                TV Series
+            </div>
+            {results.map((series) => (
+                <button
+                    key={series.tmdbId}
+                    onClick={() => onResultClick(series)}
+                    className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
+                >
+                    <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
+                        {series.poster ? (
+                            <img
+                                src={series.poster}
+                                alt={series.title}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-xs">
+                                N/A
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-[var(--fg)] truncate">{series.title}</p>
+                        <p className="text-sm text-[var(--muted)]">{series.year} • ★ {series.tmdbRating?.toFixed(1) || 'N/A'}</p>
+                    </div>
+                    <span className="shrink-0 text-xs bg-orange-600/20 text-orange-400 px-2 py-1 rounded-full">
+                        Stream
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+});
+
+

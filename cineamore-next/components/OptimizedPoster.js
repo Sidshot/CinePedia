@@ -1,14 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { getProxyUrl } from '@/lib/image-proxy';
 
 /**
  * Optimized movie poster image with fallback and error handling.
  * Uses Next.js Image component for automatic optimization and caching.
  */
-export default function OptimizedPoster({
+function OptimizedPoster({
     src,
     title,
     year,
@@ -65,3 +65,5 @@ export default function OptimizedPoster({
         </div>
     );
 }
+
+export default memo(OptimizedPoster);

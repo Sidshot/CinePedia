@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import OptimizedPoster from './OptimizedPoster';
@@ -89,83 +89,15 @@ export default function UniversalSearch({ initialQuery = '', onSearch }) {
             </form>
 
             {/* Dropdown Results */}
-            {showDropdown && hasResults && (
-                <div
-                    className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1f] border-2 border-[var(--accent)]/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
-                    onMouseDown={(e) => e.preventDefault()} // Prevent blur on click
-                >
-                    {/* Catalogue Results */}
-                    {results.catalogue.length > 0 && (
-                        <div>
-                            <div className="px-4 py-2 bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold uppercase tracking-wider">
-                                In Our Catalogue
-                            </div>
-                            {results.catalogue.map((movie) => (
-                                <button
-                                    key={movie._id}
-                                    onClick={() => handleResultClick(movie)}
-                                    className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
-                                >
-                                    <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
-                                        <OptimizedPoster
-                                            src={movie.poster}
-                                            title={movie.title}
-                                            year={movie.year}
-                                            width={48}
-                                            height={72}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-[var(--fg)] truncate">{movie.title}</p>
-                                        <p className="text-sm text-[var(--muted)]">{movie.year} • {movie.director || 'Unknown'}</p>
-                                    </div>
-                                    <span className="shrink-0 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
-                                        Download
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* TMDB Results */}
-                    {results.tmdb.length > 0 && (
-                        <div>
-                            <div className="px-4 py-2 bg-purple-500/10 text-purple-400 text-xs font-bold uppercase tracking-wider">
-                                Stream Only (Not in Catalogue)
-                            </div>
-                            {results.tmdb.map((movie) => (
-                                <button
-                                    key={movie.tmdbId}
-                                    onClick={() => handleResultClick(movie)}
-                                    className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
-                                >
-                                    <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
-                                        {movie.poster ? (
-                                            <img
-                                                src={movie.poster}
-                                                alt={movie.title}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-xs">
-                                                N/A
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-[var(--fg)] truncate">{movie.title}</p>
-                                        <p className="text-sm text-[var(--muted)]">{movie.year} • ★ {movie.tmdbRating?.toFixed(1) || 'N/A'}</p>
-                                    </div>
-                                    <span className="shrink-0 text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                                        Stream
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            <MemoizedResultsDropdown
+                show={showDropdown && hasResults}
+                results={results}
+                onResultClick={handleResultClick}
+                dropdownRef={(el) => {
+                    // Prevent blur on click
+                    if (el) el.onmousedown = (e) => e.preventDefault();
+                }}
+            />
 
             {/* Click outside to close */}
             {showDropdown && (
@@ -177,3 +109,86 @@ export default function UniversalSearch({ initialQuery = '', onSearch }) {
         </div>
     );
 }
+
+// Memoized Dropdown to prevent re-renders on every keystroke
+const MemoizedResultsDropdown = memo(function ResultsDropdown({ show, results, onResultClick, dropdownRef }) {
+    if (!show) return null;
+
+    return (
+        <div
+            ref={dropdownRef}
+            className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a1f] border-2 border-[var(--accent)]/30 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden z-50 max-h-[70vh] overflow-y-auto"
+        >
+            {/* Catalogue Results */}
+            {results.catalogue.length > 0 && (
+                <div>
+                    <div className="px-4 py-2 bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold uppercase tracking-wider">
+                        In Our Catalogue
+                    </div>
+                    {results.catalogue.map((movie) => (
+                        <button
+                            key={movie._id}
+                            onClick={() => onResultClick(movie)}
+                            className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
+                        >
+                            <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
+                                <OptimizedPoster
+                                    src={movie.poster}
+                                    title={movie.title}
+                                    year={movie.year}
+                                    width={48}
+                                    height={72}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-[var(--fg)] truncate">{movie.title}</p>
+                                <p className="text-sm text-[var(--muted)]">{movie.year} • {movie.director || 'Unknown'}</p>
+                            </div>
+                            <span className="shrink-0 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                                Download
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* TMDB Results */}
+            {results.tmdb.length > 0 && (
+                <div>
+                    <div className="px-4 py-2 bg-purple-500/10 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                        Stream Only (Not in Catalogue)
+                    </div>
+                    {results.tmdb.map((movie) => (
+                        <button
+                            key={movie.tmdbId}
+                            onClick={() => onResultClick(movie)}
+                            className="w-full flex items-center gap-4 p-3 hover:bg-white/5 transition-colors text-left"
+                        >
+                            <div className="w-12 h-16 shrink-0 rounded-lg overflow-hidden bg-white/5">
+                                {movie.poster ? (
+                                    <img
+                                        src={movie.poster}
+                                        alt={movie.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[var(--muted)] text-xs">
+                                        N/A
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-[var(--fg)] truncate">{movie.title}</p>
+                                <p className="text-sm text-[var(--muted)]">{movie.year} • ★ {movie.tmdbRating?.toFixed(1) || 'N/A'}</p>
+                            </div>
+                            <span className="shrink-0 text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                                Stream
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+});

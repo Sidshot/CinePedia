@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 /**
@@ -94,7 +94,7 @@ export default function GlobalStickySearch() {
 
             {/* Sticky Search Bar */}
             <div
-                className={`fixed top-4 left-1/2 -translate-x-1/2 z-[999] transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+                className={`fixed top-4 left-1/2 -translate-x-1/2 z-[999] ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
                     }`}
             >
                 <div className="relative">
@@ -106,7 +106,7 @@ export default function GlobalStickySearch() {
                             onChange={(e) => setQuery(e.target.value)}
                             onFocus={() => results.length > 0 && setShowDropdown(true)}
                             placeholder={isSeriesMode ? "Search series..." : "Search movies..."}
-                            className={`w-[300px] md:w-[400px] px-4 py-2.5 pl-10 rounded-full bg-[rgba(11,15,20,0.95)] backdrop-blur-xl border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-${accentBg} shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all`}
+                            className={`w-[300px] md:w-[400px] px-4 py-2.5 pl-10 rounded-full bg-[rgba(11,15,20,0.95)] border border-white/20 text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-${accentBg} shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}
                         />
                         <svg
                             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50"
@@ -124,42 +124,53 @@ export default function GlobalStickySearch() {
                     </div>
 
                     {/* Dropdown Results */}
-                    {showDropdown && results.length > 0 && (
-                        <div
-                            className="absolute top-full left-0 right-0 mt-2 bg-[rgba(11,15,20,0.98)] backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden max-h-[60vh] overflow-y-auto"
-                            onMouseDown={(e) => e.preventDefault()}
-                        >
-                            {results.map((item, idx) => (
-                                <button
-                                    key={item._id || item.tmdbId || item.id || idx}
-                                    onClick={() => handleResultClick(item)}
-                                    className="w-full flex items-center gap-3 p-3 hover:bg-white/10 transition-colors text-left"
-                                >
-                                    <div className="w-10 h-14 shrink-0 rounded-lg overflow-hidden bg-white/5">
-                                        {item.poster ? (
-                                            <img src={item.poster} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">N/A</div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-white text-sm truncate">{item.title || item.name}</p>
-                                        <p className="text-xs text-white/50">{item.year}</p>
-                                    </div>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.source === 'catalogue'
-                                            ? 'bg-green-500/20 text-green-400'
-                                            : isSeriesMode
-                                                ? 'bg-orange-500/20 text-orange-400'
-                                                : 'bg-purple-500/20 text-purple-400'
-                                        }`}>
-                                        {item.source === 'catalogue' ? 'Download' : 'Stream'}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                    <MemoizedResultsDropdown
+                        show={showDropdown && results.length > 0}
+                        results={results}
+                        isSeriesMode={isSeriesMode}
+                        onResultClick={handleResultClick}
+                    />
                 </div>
             </div>
         </>
     );
 }
+
+const MemoizedResultsDropdown = memo(function ResultsDropdown({ show, results, isSeriesMode, onResultClick }) {
+    if (!show) return null;
+
+    return (
+        <div
+            className="absolute top-full left-0 right-0 mt-2 bg-[rgba(11,15,20,0.98)] backdrop-blur-xl border border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden max-h-[60vh] overflow-y-auto"
+            onMouseDown={(e) => e.preventDefault()}
+        >
+            {results.map((item, idx) => (
+                <button
+                    key={item._id || item.tmdbId || item.id || idx}
+                    onClick={() => onResultClick(item)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-white/10 transition-colors text-left"
+                >
+                    <div className="w-10 h-14 shrink-0 rounded-lg overflow-hidden bg-white/5">
+                        {item.poster ? (
+                            <img src={item.poster} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">N/A</div>
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white text-sm truncate">{item.title || item.name}</p>
+                        <p className="text-xs text-white/50">{item.year}</p>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.source === 'catalogue'
+                        ? 'bg-green-500/20 text-green-400'
+                        : isSeriesMode
+                            ? 'bg-orange-500/20 text-orange-400'
+                            : 'bg-purple-500/20 text-purple-400'
+                        }`}>
+                        {item.source === 'catalogue' ? 'Download' : 'Stream'}
+                    </span>
+                </button>
+            ))}
+        </div>
+    );
+});
