@@ -1,5 +1,6 @@
 import { sendPhoto } from '@/lib/telegram';
-import clientPromise from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
+import mongoose from 'mongoose';
 
 /**
  * Posts the daily recommendations (1 Movie, 1 Series, 1 Anime) to the configured chat.
@@ -8,8 +9,8 @@ import clientPromise from '@/lib/mongodb';
  */
 export async function postDailyRecommendations(targetChatId = null) {
     try {
-        const client = await clientPromise;
-        const db = client.db('cinepedia');
+        await dbConnect();
+        const db = mongoose.connection.db;
         const chatId = targetChatId || process.env.TELEGRAM_CHAT_ID;
 
         if (!chatId) {
