@@ -1246,3 +1246,48 @@ cineamore-next/lib/tmdb.js (Anime fetch functions)
 1.  `fix: Resolve streaming player seeking and fullscreen issues`
 2.  `feat: Improve search relevance with dictionary-style sorting`
 3.  `feat: Implement Anime mode with Red theme and dedicated routing`
+
+## Session 3: Security Remediation & Contributor Restoration (2025-12-27)
+**Goal**: Address high-severity findings from security scan and restore/secure Contributor system.
+
+### 🔑 Key Security Fixes
+*   **Secrets Management**:
+    *   **Fail Secure**: `session.js` and `download-token.js` now CRASH in production if `JWT_SECRET` is missing (removed weak defaults).
+    *   **.env.example**: Replaced with safe placeholder template; added to allowlist in `.gitignore`.
+    *   **Documentation**: Scrubbed unsafe instructions (copying prod secrets to local) from `MIGRATION_GUIDE.md`.
+*   **Application Security**:
+    *   **Client-Side**: Removed `if (password === '2025')` checks from `public/js/app.js`.
+    *   **Admin UI**: Removed "Show Password" column from Contributor List.
+
+### 👥 Contributor System Overhaul
+*   **Database**: Dropped `contributors` collection to clear insecure data.
+*   **Hashing**: Enforced `bcrypt` hashing in `models/Contributor.js` and `lib/contributorManagement.js`.
+*   **Logic**: Restored `lib/auth.js` to support secure Contributor login (previously Admin-only).
+
+### 🏠 Local Development
+*   **Memory**: `memory.md` is now ignored by git (`.gitignore`) to keep session notes local-only.
+
+### ⚡ Gloabl Loading State Implementation
+*   **Problem**: User reported slow interactions (e.g., mode switching) without feedback.
+*   **Solution**: Implemented a global loading system with a delay threshold.
+    *   **Components**:
+        *   `GlobalLoader.js`: Client component with a 300ms delay threshold (Graceful Loading) to prevent flickering on fast loads. Shows spinner overlay if slow.
+        *   `app/loading.js`: Native Next.js server-side loading state.
+    *   **Integration**:
+        *   Added `<GlobalLoader />` to `app/layout.js`.
+        *   Updated `ContentModeToggle.js` to trigger the loader via `window.dispatchEvent('start-loading')` before navigation.
+
+### 📂 Files Modified
+```
+cineamore-next/.env.example (New safe template)
+cineamore-next/.gitignore (Added memory.md, allowed .env.example)
+cineamore-next/lib/edge/session.js (Hardened secrets)
+cineamore-next/lib/download-token.js (Hardened secrets)
+cineamore-next/models/Contributor.js (Clarified comments)
+cineamore-next/public/js/app.js (Removed insecure checks)
+cineamore-next/docs/MIGRATION_GUIDE.md (Sanitized instructions)
+cineamore-next/components/GlobalLoader.js (New)
+cineamore-next/app/loading.js (New)
+cineamore-next/app/layout.js (Added loader)
+cineamore-next/components/ContentModeToggle.js (Trigger loading)
+```

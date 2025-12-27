@@ -1,8 +1,14 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 
-const SECRET_KEY = process.env.DOWNLOAD_SECRET || process.env.JWT_SECRET || 'fallback-secret-key-download-protection';
-const key = new TextEncoder().encode(SECRET_KEY);
+const secretKey = process.env.DOWNLOAD_SECRET || process.env.JWT_SECRET;
+if (!secretKey) {
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('DOWNLOAD_SECRET or JWT_SECRET env variable is missing');
+    }
+}
+const finalKey = secretKey || 'dev-fallback-secret-key';
+const key = new TextEncoder().encode(finalKey);
 
 export async function signDownloadToken(payload) {
     return await new SignJWT(payload)

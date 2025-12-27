@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import dbConnect from '@/lib/mongodb';
 import Contributor from '@/models/Contributor';
+import bcrypt from 'bcryptjs';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
@@ -17,8 +18,6 @@ export async function getSession() {
 
 /**
  * Login function - supports both admin and contributor login
- * Note: This server action is kept for backward compatibility but the primary
- * login flow now uses /api/auth/login route
  */
 export async function login(formData) {
     'use server';
@@ -57,29 +56,31 @@ export async function login(formData) {
 
             const contributor = await Contributor.findOne({
                 username: cleanUsername,
-                password: password,
                 isActive: true
             }).lean();
 
             if (contributor) {
-                const session = await encrypt({
-                    user: contributor.username,
-                    role: 'contributor',
-                    contributorId: contributor._id.toString(),
-                    displayName: contributor.displayName || contributor.username,
-                    expires
-                });
+                const match = await bcrypt.compare(password, contributor.password);
+                if (match) {
+                    const session = await encrypt({
+                        user: contributor.username,
+                        role: 'contributor',
+                        contributorId: contributor._id.toString(),
+                        displayName: contributor.displayName || contributor.username,
+                        expires
+                    });
 
-                const cookieStore = await cookies();
-                cookieStore.set('session', session, {
-                    expires,
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'lax',
-                    path: '/'
-                });
+                    const cookieStore = await cookies();
+                    cookieStore.set('session', session, {
+                        expires,
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'lax',
+                        path: '/'
+                    });
 
-                redirect('/contributor');
+                    redirect('/contributor');
+                }
             }
         } catch (error) {
             console.error('[Auth] Contributor login error:', error);
@@ -116,3 +117,4 @@ export async function getRole() {
     if (!session) return null;
     return session.role || 'admin'; // Default to admin for old sessions
 }
+

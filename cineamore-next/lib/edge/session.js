@@ -11,8 +11,15 @@
  */
 import { SignJWT, jwtVerify } from 'jose';
 
-const secretKey = process.env.JWT_SECRET || 'default-secret-key-change-me-in-prod';
-const key = new TextEncoder().encode(secretKey);
+const secretKey = process.env.JWT_SECRET;
+if (!secretKey) {
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET env variable is missing in production');
+    }
+    console.warn('⚠️ using insecure default JWT_SECRET for development');
+}
+const finalKey = secretKey || 'dev-secret-key-do-not-use-in-prod';
+const key = new TextEncoder().encode(finalKey);
 
 /**
  * Encrypt a payload into a JWT

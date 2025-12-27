@@ -4,6 +4,7 @@ import dbConnect from '@/lib/mongodb';
 import Contributor from '@/models/Contributor';
 import { revalidatePath } from 'next/cache';
 import { isAdmin } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 /**
  * Create a new contributor account
@@ -34,10 +35,14 @@ export async function createContributor(formData) {
         return { error: 'Username already exists' };
     }
 
+    // ... (removed dynamic import)
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     try {
         await Contributor.create({
             username,
-            password,
+            password: hashedPassword,
             displayName,
             isActive: true,
             createdBy: 'admin'
@@ -68,7 +73,7 @@ export async function updateContributor(id, formData) {
     const updates = { isActive };
 
     if (password && password.length >= 4) {
-        updates.password = password;
+        updates.password = await bcrypt.hash(password, 10);
     }
 
     if (displayName !== undefined) {

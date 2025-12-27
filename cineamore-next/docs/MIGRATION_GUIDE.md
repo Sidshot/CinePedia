@@ -20,13 +20,10 @@ fetch('/api/admin/migrate-visibility', {
 }).then(r => r.json()).then(console.log)
 ```
 
-#### Option B: Via Local Script (Advanced)
-1. Temporarily set your production MongoDB URI in `.env.local`:
-```bash
-MONGODB_URI=mongodb+srv://your-production-uri
-```
-2. Run: `node scripts/migrate-visibility.mjs`
-3. **Immediately revert `.env.local` back to local URI**
+#### Option B: Via Server-Side Script (Advanced)
+1. SSH into your production server (or use Vercel Console).
+2. Run the script directly in the production environment where `MONGODB_URI` is already secure.
+**NEVER copy production credentials to your local `.env.local` file.**
 
 ### Expected Output
 ```json

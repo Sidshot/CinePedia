@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 /**
  * Contributor Model
  * Stores contributor accounts managed by admin.
- * Password is stored in plaintext per requirement (admin needs to view/reset).
+ * Passwords are hashed using bcrypt.
  */
 const ContributorSchema = new mongoose.Schema({
     username: {

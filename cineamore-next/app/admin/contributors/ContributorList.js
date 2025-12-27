@@ -7,7 +7,6 @@ export default function ContributorList({ contributors: initialContributors }) {
     const [contributors, setContributors] = useState(initialContributors);
     const [showCreate, setShowCreate] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [showPasswordId, setShowPasswordId] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
@@ -155,7 +154,7 @@ export default function ContributorList({ contributors: initialContributors }) {
                         <tr>
                             <th className="p-4 font-bold">Username</th>
                             <th className="p-4 font-bold hidden md:table-cell">Display Name</th>
-                            <th className="p-4 font-bold hidden md:table-cell">Password</th>
+                            {/* Password column removed for security */}
                             <th className="p-4 font-bold">Status</th>
                             <th className="p-4 font-bold text-center">Pending</th>
                             <th className="p-4 font-bold text-right">Actions</th>
@@ -177,18 +176,7 @@ export default function ContributorList({ contributors: initialContributors }) {
                                     <td className="p-4 hidden md:table-cell text-[var(--muted)]">
                                         {c.displayName || '—'}
                                     </td>
-                                    <td className="p-4 hidden md:table-cell">
-                                        {showPasswordId === c._id ? (
-                                            <span className="font-mono text-[var(--accent)]">{c.password}</span>
-                                        ) : (
-                                            <button
-                                                onClick={() => setShowPasswordId(showPasswordId === c._id ? null : c._id)}
-                                                className="text-xs text-[var(--muted)] hover:text-[var(--fg)] underline"
-                                            >
-                                                Show
-                                            </button>
-                                        )}
-                                    </td>
+                                    {/* Password column removed */}
                                     <td className="p-4">
                                         <button
                                             onClick={() => toggleActive(c._id, c.isActive)}
@@ -210,12 +198,6 @@ export default function ContributorList({ contributors: initialContributors }) {
                                         )}
                                     </td>
                                     <td className="p-4 text-right space-x-3">
-                                        <button
-                                            onClick={() => setShowPasswordId(showPasswordId === c._id ? null : c._id)}
-                                            className="text-sm text-blue-400 hover:underline md:hidden"
-                                        >
-                                            {showPasswordId === c._id ? 'Hide' : 'Show'} PW
-                                        </button>
                                         <button
                                             onClick={() => handleDelete(c._id, c.username)}
                                             className="text-sm text-red-500 hover:underline"

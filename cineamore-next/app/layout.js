@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import UserMenu from "@/components/UserMenu";
 import Footer from "@/components/Footer";
 import GlobalStickySearch from "@/components/GlobalStickySearch";
+import GlobalLoader from "@/components/GlobalLoader";
 import LayoutAnimationWrapper from "@/components/LayoutAnimationWrapper";
 import { Geist, Geist_Mono } from "next/font/google";
 import { auth } from "@/lib/auth-next";
@@ -80,6 +81,7 @@ export default async function RootLayout({ children }) {
         {/* GLOBAL STICKY SEARCH - Appears when scrolling on ALL pages */}
         {/* DO NOT REMOVE - User has requested this feature multiple times */}
         <GlobalStickySearch />
+        <GlobalLoader />
 
         <Analytics />
         <SpeedInsights />
