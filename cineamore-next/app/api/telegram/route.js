@@ -29,7 +29,7 @@ export async function POST(req) {
             // ============ PUBLIC COMMANDS (Anyone in Group) ============
 
             // ---------- /random - Get a random movie ----------
-            if (text === '/random' && !isPrivate) {
+            if (text === '/random' && (!isPrivate || isAdmin)) {
                 try {
                     const { default: dbConnect } = await import('@/lib/mongodb');
                     const mongoose = await import('mongoose');
