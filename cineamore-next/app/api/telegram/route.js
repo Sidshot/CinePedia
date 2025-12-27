@@ -26,6 +26,92 @@ export async function POST(req) {
                 return NextResponse.json({ ok: true });
             }
 
+            // ============ PUBLIC COMMANDS (Anyone in Group) ============
+
+            // ---------- /random - Get a random movie ----------
+            if (text === '/random' && !isPrivate) {
+                try {
+                    const { default: dbConnect } = await import('@/lib/mongodb');
+                    const mongoose = await import('mongoose');
+                    await dbConnect();
+                    const db = mongoose.default.connection.db;
+                    const [movie] = await db.collection('movies').aggregate([{ $sample: { size: 1 } }]).toArray();
+
+                    if (movie) {
+                        const movieId = movie.__id || movie._id.toString();
+                        const caption = `
+🎲 <b>Random Pick for You!</b>
+<b>${movie.title}</b> (${movie.year || 'N/A'})
+
+${movie.plot ? movie.plot.substring(0, 120) + '...' : ''}
+
+👉 https://cineamore.vercel.app/movie/${movieId}
+`;
+                        await sendPhoto(chatId, movie.posterUrl, caption);
+                    } else {
+                        await sendMessage(chatId, '🎲 No movies found! Try again later.');
+                    }
+                } catch (e) {
+                    await sendMessage(chatId, '❌ Error fetching random movie.');
+                }
+                return NextResponse.json({ ok: true });
+            }
+
+            // ---------- /site - Link to website ----------
+            if (text === '/site' || text === '/website') {
+                await sendMessage(chatId, `
+🌐 <b>CineAmore</b>
+
+Your gateway to unlimited Movies, Series & Anime!
+
+👉 <a href="https://cineamore.vercel.app">cineamore.vercel.app</a>
+`);
+                return NextResponse.json({ ok: true });
+            }
+
+            // ---------- /download - How to download ----------
+            if (text === '/download') {
+                await sendMessage(chatId, `
+📥 <b>How to Download</b>
+
+1. Open any movie page
+2. Scroll to <b>Download Links</b>
+3. Click your preferred quality
+4. Done! 🎉
+
+👉 <a href="https://cineamore.vercel.app">Browse Movies</a>
+`);
+                return NextResponse.json({ ok: true });
+            }
+
+            // ---------- /stream - How to stream ----------
+            if (text === '/stream') {
+                await sendMessage(chatId, `
+📡 <b>How to Stream</b>
+
+1. Open any Movie or Series page
+2. Click the <b>Play</b> button on poster
+3. Choose a server & enjoy!
+
+👉 <a href="https://cineamore.vercel.app">Browse Content</a>
+`);
+                return NextResponse.json({ ok: true });
+            }
+
+            // ---------- /commands - Show public commands ----------
+            if (text === '/commands' && !isPrivate) {
+                await sendMessage(chatId, `
+🤖 <b>Available Commands</b>
+
+/random - Get a random movie
+/site - Visit CineAmore website
+/download - How to download
+/stream - How to stream
+/ping - Check if bot is alive
+`);
+                return NextResponse.json({ ok: true });
+            }
+
             // ---------- /help (Admin DM only) ----------
             if (text === '/help' && isPrivate && isAdmin) {
                 const helpText = `
