@@ -8,8 +8,14 @@ import ActionFABs from '@/components/ActionFABs';
 import OptimizedPoster from '@/components/OptimizedPoster';
 import PromoBanner from '@/components/PromoBanner';
 import Link from 'next/link';
-import { getDailyTrending } from '@/lib/trending';
 import TrendingRow from '@/components/TrendingRow';
+import {
+  getCachedGenres,
+  getCachedHeroMovies,
+  getCachedRecentlyAdded,
+  getCachedTrending,
+  getCachedGenreRows
+} from '@/lib/homeData';
 
 // Pagination config
 const MOVIES_PER_PAGE = 48;
@@ -63,67 +69,35 @@ export default async function Home({ searchParams }) {
 
   try {
     if (process.env.MONGODB_URI) {
-      await dbConnect();
 
-      // 0. Fetch Daily Trending (Top 10) - Fail Safe
+      // 0. Fetch Daily Trending (Cached)
       try {
-        const rawTrending = await getDailyTrending();
-        trendingMovies = rawTrending.map(serializeMovie);
+        trendingMovies = await getCachedTrending();
       } catch (e) {
         console.error("Trending Fetch failed:", e);
       }
 
-      // 1. Fetch Global Data (Genres) - Needed for both views
-      const genreAgg = await Movie.aggregate([
-        { $unwind: '$genre' },
-        { $group: { _id: '$genre' } },
-        { $sort: { _id: 1 } }
-      ]);
-      allGenres = genreAgg.map(g => g._id).filter(g => g && g !== 'Uncategorized');
-
-      // 2. Fetch Hero data (Only needed for Page 1/Default)
-      if (currentPage === 1) {
-        const heroSample = await Movie.aggregate([
-          { $match: { 'visibility.state': 'visible', backdrop: { $exists: true, $ne: null, $ne: '' } } },
-          { $sample: { size: 10 } },
-          { $project: { title: 1, year: 1, director: 1, backdrop: 1, poster: 1, __id: 1 } }
-        ]);
-        heroMovies = heroSample.map(doc => ({ ...doc, _id: doc._id.toString() }));
-      }
+      // 1. Fetch Global Data (Cached)
+      allGenres = await getCachedGenres();
 
       if (isDefaultView) {
-        // --- DEFAULT VIEW STRATEGY ---
+        // --- DEFAULT VIEW STRATEGY (CACHED) ---
 
-        // A. Recently Added (Last 20)
-        const recentMoviesDocs = await Movie.find({ 'visibility.state': 'visible' })
-          .sort({ addedAt: -1 })
-          .select('title year director poster __id addedAt downloadLinks')
-          .slice('downloadLinks', 1) // OPTIMIZATION: Only fetch 1 link for grid detection
-          .limit(18)
-          .lean();
-        recentlyAdded = recentMoviesDocs.map(serializeMovie);
+        // Parallel Fetch for Speed
+        const [heroData, recentData, rowData] = await Promise.all([
+          getCachedHeroMovies(),
+          getCachedRecentlyAdded(),
+          getCachedGenreRows(HOME_GENRES)
+        ]);
 
-        // B. Genre Sections (Parallel Fetch)
-        // Fetch top 18 for each priority genre
-        const genrePromises = HOME_GENRES.map(async (genre) => {
-          const movies = await Movie.find({ genre: genre, 'visibility.state': 'visible' })
-            .sort({ year: -1, addedAt: -1 }) // Sort by Year Newest -> Oldest
-            .select('title year director poster __id addedAt downloadLinks genre tmdbRating')
-            .slice('downloadLinks', 1) // OPTIMIZATION
-            .limit(18)
-            .lean();
-          return {
-            title: genre,
-            movies: movies.map(serializeMovie)
-          };
-        });
-
-        genreRowsData = await Promise.all(genrePromises);
-        // Filter out empty rows
-        genreRowsData = genreRowsData.filter(row => row.movies.length > 0);
+        heroMovies = heroData;
+        recentlyAdded = recentData;
+        genreRowsData = rowData;
 
       } else {
-        // --- FILTERED / PAGINATED VIEW STRATEGY ---
+        // --- FILTERED / PAGINATED VIEW STRATEGY (DYNAMIC - NO CACHE) ---
+        // This part remains dynamic as it depends on user queries
+        await dbConnect(); // Ensure connection for dynamic queries
 
         const query = { 'visibility.state': 'visible' };
         if (currentGenre && currentGenre !== 'all' && currentGenre !== 'newest') {
@@ -138,7 +112,6 @@ export default async function Home({ searchParams }) {
           ];
         }
 
-
         let sortObj = { addedAt: -1 };
         switch (sortBy) {
           case 'newest': sortObj = { addedAt: -1 }; break;
@@ -148,14 +121,13 @@ export default async function Home({ searchParams }) {
           default: sortObj = { addedAt: -1 };
         }
 
-
         const skip = (currentPage - 1) * MOVIES_PER_PAGE;
         totalCount = await Movie.countDocuments(query);
         totalPages = Math.ceil(totalCount / MOVIES_PER_PAGE);
 
         const moviesDocs = await Movie.find(query)
           .select('title year director ratingSum ratingCount __id addedAt letterboxd backdrop poster downloadLinks dl drive genre original')
-          .slice('downloadLinks', 1) // OPTIMIZATION
+          .slice('downloadLinks', 1)
           .sort(sortObj)
           .skip(skip)
           .limit(MOVIES_PER_PAGE)
@@ -172,7 +144,6 @@ export default async function Home({ searchParams }) {
     isOffline = true;
 
     // Static Fallback Logic
-    // Populating genres
     const genreSet = new Set();
     staticData.forEach(m => (m.genre || []).forEach(g => g && g !== 'Uncategorized' && genreSet.add(g)));
     allGenres = Array.from(genreSet).sort();
@@ -186,7 +157,6 @@ export default async function Home({ searchParams }) {
         movies: staticData.filter(m => m.genre?.includes(genre)).slice(0, 18).map(serializeMovie)
       })).filter(r => r.movies.length > 0);
     } else {
-      // Fallback filtering logic
       let filtered = staticData;
       if (currentGenre && currentGenre !== 'all') {
         filtered = filtered.filter(m => m.genre?.includes(currentGenre));
@@ -199,7 +169,6 @@ export default async function Home({ searchParams }) {
         );
       }
 
-      // Simulating sort
       if (sortBy === 'year-desc') filtered.sort((a, b) => (b.year || 0) - (a.year || 0));
 
       totalCount = filtered.length;

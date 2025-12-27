@@ -98,6 +98,7 @@ export default function TrendingRow({ movies }) {
                                         width={160}
                                         height={240}
                                         className="w-full h-full object-cover"
+                                        priority={index < 3}
                                     />
 
                                     {/* Persistent Rating Badge */}

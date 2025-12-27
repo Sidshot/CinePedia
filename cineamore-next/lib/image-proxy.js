@@ -12,6 +12,11 @@ export function getProxyUrl(url) {
     // Only proxy http/https
     if (!url.startsWith('http')) return url;
 
+    // Bypass proxy for known safe/CORS-friendly domains
+    if (url.includes('tmdb.org') || url.includes('themoviedb.org') || url.includes('bing.net') || url.includes('googleusercontent.com')) {
+        return url;
+    }
+
     // Use built-in API route
     return `/api/image?url=${encodeURIComponent(url)}`;
 }

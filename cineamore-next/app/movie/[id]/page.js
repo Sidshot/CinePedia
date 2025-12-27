@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BackToLibraryButton from '@/components/BackToLibraryButton';
 import SecureDownloadButton from '@/components/SecureDownloadButton';
 import InteractiveRating from '@/components/InteractiveRating';
 import AddToListButton from '@/components/AddToListButton';
@@ -124,9 +125,7 @@ export default async function MoviePage({ params }) {
                 <img src={backdropUrl} className="w-full h-full object-cover opacity-60 blur-sm scale-110" alt="Backdrop" />
 
                 <div className="absolute top-8 left-8 z-50">
-                    <Link href="/" className="bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-white/90 font-medium hover:bg-white/10 transition">
-                        ← Back to Library
-                    </Link>
+                    <BackToLibraryButton />
                 </div>
             </div>
 
