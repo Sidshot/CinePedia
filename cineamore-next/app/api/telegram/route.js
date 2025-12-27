@@ -27,21 +27,14 @@ export async function POST(req) {
             // Acknowledge the command
             await sendMessage(chatId, '⏳ <b>Posting daily recommendations...</b>');
 
-            // Call the cron endpoint internally
-            try {
-                const baseUrl = process.env.VERCEL_URL
-                    ? `https://${process.env.VERCEL_URL}`
-                    : 'http://localhost:3000';
-                const res = await fetch(`${baseUrl}/api/cron/daily`);
-                const data = await res.json();
+            // Import and call the shared helper directly
+            const { postDailyRecommendations } = await import('@/lib/daily-recs');
+            const result = await postDailyRecommendations(chatId);
 
-                if (data.ok) {
-                    await sendMessage(chatId, '✅ <b>Daily recommendations posted!</b>');
-                } else {
-                    await sendMessage(chatId, '❌ <b>Failed:</b> ' + (data.error || 'Unknown error'));
-                }
-            } catch (e) {
-                await sendMessage(chatId, '❌ <b>Error:</b> ' + e.message);
+            if (result.ok) {
+                await sendMessage(chatId, '✅ <b>Daily recommendations posted!</b>');
+            } else {
+                await sendMessage(chatId, '❌ <b>Failed:</b> ' + (result.error || 'Unknown error'));
             }
             return NextResponse.json({ ok: true });
         }
