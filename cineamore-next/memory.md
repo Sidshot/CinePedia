@@ -6,7 +6,7 @@
 
 **Session Duration**: ~1 hour
 **Status**: ✅ Complete & Verified
-**Commits**: 1 (Pending Push)
+**Commits**: 2 (Pending Push)
 
 ### What Was Built
 
@@ -29,6 +29,23 @@
 -   **Problem**: Search bar input blocked UI for ~200ms on typing (INP violation).
 -   **Root Cause**: Expensive `backdrop-blur-md`, `box-shadow`, and `transition-all` on the input element causing heavy GPU repaints on every keystroke.
 -   **Solution**: Replaced blur effects with solid high-alpha colors (`bg-[#0a0a0a]/80`) in `UniversalSearch`, `SeriesSearch`, and `SeriesGrid`.
+33: 
+34: #### 4. Search UX Refinements
+35: -   **Problem**: Search dropdowns stuck open when clicking outside or scrolling.
+36: -   **Solution**: Added `z-index` managed backdrops and `window.addEventListener('scroll')` to auto-close dropdowns.
+37: -   **Components**: `GlobalStickySearch`, `UniversalSearch`, `SeriesSearch`.
+
+#### 5. Streaming Player Fixes (Seeking & Fullscreen)
+-   **Problem**:
+    1.  **Alpha**: Seeking was stuck (player wouldn't resume).
+    2.  **Eta/Others**: Fullscreen button inside iframe was disabled/broken.
+-   **Root Cause**: Missing modern iframe permission policies.
+    -   seeking required `encrypted-media`.
+    -   Eta (vidsrc) required wildcard (`*`) permissions for cross-origin nested iframes.
+-   **Solution**:
+    -   Added `allow-presentation`, `allow-orientation-lock`, `encrypted-media` to sandbox/allow attributes.
+    -   Updated `allow` attribute to use `*` wildcards for `fullscreen`, `autoplay`, `picture-in-picture`.
+-   **Files**: `components/StreamingPlayer.js`, `components/SeriesStreamingPlayer.js`
 
 ### Technical Details
 **Files Modified**:
@@ -39,6 +56,9 @@
 -   `components/TrendingRow.js` - Added priority prop
 -   `lib/image-proxy.js` - Added bypass logic
 -   `components/OptimizedPoster.js` - Removed opacity fade
+42: -   `components/GlobalStickySearch.js` - Fixed close behavior
+43: -   `components/UniversalSearch.js` - Fixed close behavior, memoized results
+44: -   `components/SeriesSearch.js` - Fixed close behavior, memoized results
 
 ---
 
@@ -1166,3 +1186,63 @@ Complete security audit to lock down the application, focusing on Admin authoriz
 
 ### ­ƒøí´©Å Status
 The application core is now secure. Administrative functions are strictly gated.
+
+## 📝 Session Log: 2025-12-27 (Anime Mode + Search Fixes)
+**Goal**: Implement dedicated Anime mode and improve search relevance.
+
+### ✅ Features Completed
+
+#### 1. Anime Mode Implementation
+*   **Theme**: "Reddit Red" (`bg-red-600`, `text-red-500`) distinctive theme.
+*   **Routing**:
+    *   `/anime`: Main Hub (Trending, Popular, Top Rated, Genre Rows).
+    *   `/anime/[id]`: Detail page with Red theme.
+    *   `/anime/genre/[id]`: Genre filtered views.
+*   **Data Layer**:
+    *   Added `lib/anime-genres.js` (Generic ID mappings).
+    *   Updated `lib/tmdb.js` with `getTrendingAnime`, `getPopularAnime`, etc. (Filters: Genre 16 + Origin JP).
+*   **UI Components**:
+    *   `AnimeHero.js`: Custom Hero with Red theme.
+    *   `AnimeGenreRow.js`: Clean cards without "Stream" pills.
+    *   `ContentModeToggle.js`: Added 3-way toggle (Films | Series | Anime).
+
+#### 2. Search Relevance Overhaul
+*   **Problem**: Search results were not prioritized (e.g., "Phoe" didn't rank "The Phoenician Scheme" highly).
+*   **Solution**: Implemented Dictionary-Style Sorting in `app/api/search/route.js`.
+*   **Algorithm**:
+    1.  **Exact Match**: 100 pts.
+    2.  **Starts With**: 90 pts.
+    3.  **Word Starts With**: 80 pts.
+    4.  **Contains**: 10 pts.
+*   **Scope**: Applied to both Local Catalogue and TMDB results.
+
+#### 3. Streaming Player Fixes
+*   **Problem**: Seeking broken on Alpha, Fullscreen broken on Eta.
+*   **Fix**: Updated `iframe` sandbox/allow attributes.
+    *   Added `allow-presentation`, `allow-orientation-lock`.
+    *   Added `encrypted-media` for seeking.
+    *   Added wildcard `*` permissions for `autoplay`, `fullscreen`, `picture-in-picture` (for providers like vidsrc).
+
+### 📂 Files Created
+```
+cineamore-next/components/AnimeHero.js
+cineamore-next/components/AnimeGenreRow.js
+cineamore-next/lib/anime-genres.js
+cineamore-next/app/anime/page.js
+cineamore-next/app/anime/[id]/page.js
+cineamore-next/app/anime/genre/[id]/page.js
+```
+
+### 📂 Files Modified
+```
+cineamore-next/app/api/search/route.js (Relevance sorting + Anime mode)
+cineamore-next/components/ContentModeToggle.js (Added Anime option)
+cineamore-next/components/StreamingPlayer.js (Iframe permissions)
+cineamore-next/components/SeriesStreamingPlayer.js (Iframe permissions)
+cineamore-next/lib/tmdb.js (Anime fetch functions)
+```
+
+### 🚀 Commits (Pending)
+1.  `fix: Resolve streaming player seeking and fullscreen issues`
+2.  `feat: Improve search relevance with dictionary-style sorting`
+3.  `feat: Implement Anime mode with Red theme and dedicated routing`

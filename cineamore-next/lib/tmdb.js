@@ -258,3 +258,56 @@ export async function getSeasonDetails(tmdbId, seasonNumber) {
         return { error: 'Season details failed' };
     }
 }
+
+// ============================================
+// ANIME API FUNCTIONS (Genre 16 + Origin JP)
+// ============================================
+
+export async function getTrendingAnime() {
+    if (!API_KEY) return [];
+    try {
+        const res = await fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&with_origin_country=JP&sort_by=popularity.desc&page=1`, {
+            next: { revalidate: 3600 }
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.results || [];
+    } catch (e) { return []; }
+}
+
+export async function getPopularAnime() {
+    if (!API_KEY) return [];
+    try {
+        const res = await fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&with_origin_country=JP&sort_by=vote_count.desc&page=1`, {
+            next: { revalidate: 3600 }
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.results || [];
+    } catch (e) { return []; }
+}
+
+export async function getTopRatedAnime() {
+    if (!API_KEY) return [];
+    try {
+        const res = await fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&with_origin_country=JP&sort_by=vote_average.desc&vote_count.gte=200&page=1`, {
+            next: { revalidate: 3600 }
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.results || [];
+    } catch (e) { return []; }
+}
+
+export async function getAnimeByGenre(genreId, page = 1) {
+    if (!API_KEY) return [];
+    try {
+        // base constraints: Animation (16) + Japan (JP) + Specific Genre
+        const res = await fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16,${genreId}&with_origin_country=JP&sort_by=popularity.desc&page=${page}`, {
+            next: { revalidate: 3600 }
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.results || [];
+    } catch (e) { return []; }
+}

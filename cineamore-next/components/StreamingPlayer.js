@@ -147,12 +147,12 @@ export default function StreamingPlayer({ tmdbId, title, onProgress }) {
                     src={embedUrl}
                     key={embedUrl} // Force re-render on url change
                     {...(currentProvider.supportsSandbox && {
-                        sandbox: "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
+                        sandbox: "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-presentation allow-orientation-lock"
                     })}
                     referrerPolicy="no-referrer"
                     className={`w-full h-full transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
                     frameBorder="0"
-                    allow="autoplay; fullscreen; picture-in-picture"
+                    allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *; gyroscope; accelerometer; clipboard-write"
                     allowFullScreen
                     onLoad={() => setIsLoading(false)}
                     title={`Stream ${title}`}
