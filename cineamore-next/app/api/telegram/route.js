@@ -154,10 +154,10 @@ Your gateway to unlimited Movies, Series & Anime!
             }
 
             // ============ NATURAL LANGUAGE TRIGGERS ============
-            const lowerText = rawText.toLowerCase();
+            // Use cleanText which has @botname removed
 
             // Greetings
-            if (/^(hi|hello|hey|yo|sup|hola|namaste|hii+)\b/i.test(lowerText)) {
+            if (/^(hi|hello|hey|hye|yo|sup|hola|namaste|hii+)\b/i.test(cleanText)) {
                 const greetings = [
                     '👋 Hey there! Type /commands to see what I can do!',
                     '🎬 Hello! Looking for a movie? Try /random!',
@@ -168,7 +168,7 @@ Your gateway to unlimited Movies, Series & Anime!
             }
 
             // Thank you
-            if (/thank|thanks|thx|ty\b/i.test(lowerText)) {
+            if (/thank|thanks|thx|ty\b/i.test(cleanText)) {
                 const responses = [
                     '😊 You\'re welcome! Enjoy your movie!',
                     '🎬 Happy to help! Enjoy watching!',
@@ -179,7 +179,7 @@ Your gateway to unlimited Movies, Series & Anime!
             }
 
             // Movie recommendation requests
-            if (/recommend|suggest|what.*(watch|movie|film)|bored|something to watch/i.test(lowerText)) {
+            if (/recommend|suggest|what.*(watch|movie|film)|bored|something to watch/i.test(cleanText)) {
                 try {
                     const { default: dbConnect } = await import('@/lib/mongodb');
                     const mongoose = await import('mongoose');
@@ -206,17 +206,17 @@ ${movie.plot ? movie.plot.substring(0, 120) + '...' : ''}
             }
 
             // Good night/morning
-            if (/good\s*(night|evening)/i.test(lowerText)) {
+            if (/good\s*(night|evening)/i.test(cleanText)) {
                 await sendMessage(chatId, '🌙 Good night! Sweet dreams and happy watching tomorrow!');
                 return NextResponse.json({ ok: true });
             }
-            if (/good\s*(morning|day)/i.test(lowerText)) {
+            if (/good\s*(morning|day)/i.test(cleanText)) {
                 await sendMessage(chatId, '☀️ Good morning! Ready for some movies today? Try /random!');
                 return NextResponse.json({ ok: true });
             }
 
             // Bot mentions or questions about the bot
-            if (/who.*(are|r) (you|u)|what.*(are|r) (you|u)|your name/i.test(lowerText)) {
+            if (/who.*(are|r) (you|u)|what.*(are|r) (you|u)|your name/i.test(cleanText)) {
                 await sendMessage(chatId, `
 🤖 <b>I'm CineAmore Bot!</b>
 
