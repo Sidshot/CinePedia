@@ -1294,4 +1294,8 @@ cineamore-next/models/Contributor.js (Removed duplicate index)
 cineamore-next/models/Movie.js (Removed duplicate index)
 cineamore-next/components/GlobalLoader.js (Premium Design Update)
 cineamore-next/app/loading.js (Premium Design Update)
+cineamore-next/lib/telegram.js (Telegram API Helper)
+cineamore-next/app/api/telegram/route.js (Webhook Handler)
+cineamore-next/app/api/cron/daily/route.js (Daily Recommendation Cron)
+cineamore-next/vercel.json (Cron Schedule)
 ```
