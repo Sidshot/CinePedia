@@ -11,7 +11,7 @@ export default function GlobalLoader() {
     // Delay threshold in ms. 
     // If loading takes less than this, user sees nothing (smooth).
     // If more, they see the loader.
-    const DELAY_MS = 300;
+    const DELAY_MS = 400;
 
     const timerRef = useRef(null);
 
@@ -23,7 +23,7 @@ export default function GlobalLoader() {
 
     useEffect(() => {
         const handleStart = () => {
-            if (timerRef.current) clearTimeout(timerRef.current); // Clear any existing timer
+            if (timerRef.current) clearTimeout(timerRef.current);
 
             // Only show loader if it takes longer than DELAY_MS
             timerRef.current = setTimeout(() => {
@@ -46,52 +46,40 @@ export default function GlobalLoader() {
         };
     }, []);
 
-    // Safety: Auto-dismiss loader if it hangs for more than 5 seconds
-    // This handles cases where navigation crashes or stalls indefinitely
+    // Safety: Auto-dismiss loader if it hangs for more than 3 seconds
     useEffect(() => {
         let safetyTimer;
         if (isLoading) {
             safetyTimer = setTimeout(() => {
                 setIsLoading(false);
-            }, 5000);
+            }, 3000); // Reduced from 5s to 3s
         }
         return () => clearTimeout(safetyTimer);
     }, [isLoading]);
 
     if (!isLoading) return null;
 
-    if (!isLoading) return null;
+    // Cinephile-friendly loading phrases
+    const phrases = [
+        'CURATING',
+        'NOW SHOWING',
+        'ROLLING',
+        'REELING'
+    ];
+    const phrase = phrases[Math.floor(Math.random() * phrases.length)];
 
     return (
         <div
-            // Allow user to click anywhere to force dismiss (Escape hatch)
             onClick={() => setIsLoading(false)}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-xl animate-in fade-in duration-300 cursor-pointer"
-            title="Click to cancel loading"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm cursor-pointer"
         >
-            <div className="flex flex-col items-center gap-6 pointer-events-none transform scale-100 transition-transform duration-500">
-                {/* Brand Ring Animation */}
-                <div className="relative w-16 h-16 flex items-center justify-center">
-                    {/* Outer glow */}
-                    <div className="absolute inset-0 rounded-full bg-[var(--accent)] opacity-20 blur-xl animate-pulse"></div>
+            <div className="flex flex-col items-center gap-4 pointer-events-none">
+                {/* Minimal spinner */}
+                <div className="w-6 h-6 border border-[var(--accent)] border-t-transparent rounded-full animate-spin"></div>
 
-                    {/* Rotating Ring */}
-                    <div className="absolute inset-0 border-2 border-white/10 rounded-full"></div>
-                    <div className="absolute inset-0 border-2 border-t-[var(--accent)] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin duration-1000"></div>
-
-                    {/* Inner Core */}
-                    <div className="w-2 h-2 bg-[var(--accent)] rounded-full animate-pulse shadow-[0_0_10px_var(--accent)]"></div>
-                </div>
-
-                {/* Typography */}
-                <div className="flex flex-col items-center gap-2">
-                    <div className="text-white text-xs font-mono tracking-[0.3em] font-bold">LOADING</div>
-                    <div className="w-8 h-[1px] bg-white/20"></div>
-                </div>
-
-                {/* Subtle Dismiss Hint */}
-                <div className="absolute bottom-12 text-white/20 text-[10px] tracking-widest uppercase hover:text-white/40 transition-colors">
-                    Click to dismiss
+                {/* Cinephile phrase */}
+                <div className="text-white/60 text-[10px] font-mono tracking-[0.4em] uppercase">
+                    {phrase}
                 </div>
             </div>
         </div>
