@@ -49,10 +49,10 @@ export default function ContentModeToggle() {
     };
 
     return (
-        <div className="flex items-center bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/10">
+        <div className="flex items-center bg-white/5 backdrop-blur-md rounded-full p-0.5 sm:p-1 border border-white/10">
             <button
                 onClick={() => handleToggle('films')}
-                className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${mode === 'films'
+                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all ${mode === 'films'
                     ? 'bg-[var(--accent)] text-black shadow-lg'
                     : 'text-[var(--muted)] hover:text-white'
                     }`}
@@ -61,7 +61,7 @@ export default function ContentModeToggle() {
             </button>
             <button
                 onClick={() => handleToggle('series')}
-                className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${mode === 'series'
+                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all ${mode === 'series'
                     ? 'bg-orange-600 text-white shadow-lg'
                     : 'text-[var(--muted)] hover:text-white'
                     }`}
@@ -70,7 +70,7 @@ export default function ContentModeToggle() {
             </button>
             <button
                 onClick={() => handleToggle('anime')}
-                className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${mode === 'anime'
+                className={`px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold transition-all ${mode === 'anime'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'text-[var(--muted)] hover:text-white'
                     }`}
