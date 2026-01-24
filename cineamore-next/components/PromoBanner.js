@@ -3,31 +3,47 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Ads Notice Banner
- * - Informs users about third-party streaming integrations and potential ads
- * - "I Have Read This" - permanently dismisses (localStorage)
- * - "I'll Read Later" - dismisses for session only (sessionStorage)
- * - Only shows on homepage default view
+ * Donation Appeal Banner
+ * - Asks users to support CineAmore with donations
+ * - Shows Twitter and Telegram links for updates
+ * - User must wait 5 seconds before dismissing
+ * - Once dismissed permanently, never shows again (localStorage)
  * - Glossy iOS style matching site aesthetic
  */
-const PERMANENT_KEY = 'adsNoticeDismissedPermanent';
-const SESSION_KEY = 'adsNoticeDismissedSession';
+const PERMANENT_KEY = 'donationNoticeDismissed';
 
 export default function PromoBanner({ showOnlyOnHome = true }) {
   const [isVisible, setIsVisible] = useState(false);
+  const [canDismiss, setCanDismiss] = useState(false);
+  const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
     // Check if banner should show
     const isPermanentlyDismissed = typeof window !== 'undefined' &&
       localStorage.getItem(PERMANENT_KEY) === 'true';
 
-    const isSessionDismissed = typeof window !== 'undefined' &&
-      sessionStorage.getItem(SESSION_KEY) === 'true';
-
-    if (!isPermanentlyDismissed && !isSessionDismissed) {
+    if (!isPermanentlyDismissed) {
       setIsVisible(true);
     }
   }, []);
+
+  // 5-second countdown timer
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setCanDismiss(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isVisible]);
 
   // Lock body scroll when banner is visible
   useEffect(() => {
@@ -45,15 +61,9 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
     };
   }, [isVisible]);
 
-  const handlePermanentDismiss = () => {
-    // Never show again
+  const handleDismiss = () => {
+    if (!canDismiss) return;
     localStorage.setItem(PERMANENT_KEY, 'true');
-    setIsVisible(false);
-  };
-
-  const handleSessionDismiss = () => {
-    // Show again next session (when tab/browser is closed and reopened)
-    sessionStorage.setItem(SESSION_KEY, 'true');
     setIsVisible(false);
   };
 
@@ -62,15 +72,6 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
   return (
     <div className="promo-banner-overlay">
       <div className="promo-banner-content">
-        {/* Close Button (X) - Same as "I'll Read Later" */}
-        <button
-          onClick={handleSessionDismiss}
-          className="promo-close-btn"
-          aria-label="Close banner"
-        >
-          ✕
-        </button>
-
         {/* Banner Content */}
         <div className="promo-inner">
           {/* Decorative Elements */}
@@ -79,53 +80,83 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
 
           {/* Icon */}
           <div className="promo-icon">
-            📺⚠️
+            💛🙏
           </div>
 
           {/* Title */}
           <h2 className="promo-title">
-            Important Streaming Notice
+            Support CineAmore 💛
           </h2>
 
           {/* Main Message */}
           <p className="promo-subtitle">
-            CinePedia enables free movie streaming through <strong>third-party resource integrations</strong>.
-            These integrations may display <strong>advertisements</strong> which are beyond our control.
+            So far, CineAmore has been a <strong>hobby project</strong> run by a single person,
+            with all costs covered out of pocket. As the site grows, it's becoming harder to
+            keep up with <strong>rising expenses</strong>.
+          </p>
+          <p className="promo-subtitle donation-appeal">
+            I kindly request you to <strong className="donate-highlight">DONATE</strong> anything
+            you can to keep this alive. Currently, the donation page is being set up.
           </p>
 
-          {/* Tips Section */}
+          {/* Social Links Section */}
           <div className="promo-tips">
-            <div className="promo-tip">
-              <span className="tip-icon">🛡️</span>
-              <span>We recommend using an <strong>ad-blocker extension</strong> (uBlock Origin or AdBlock Plus) for the best ad-free experience.</span>
+            <div className="promo-tip social-tip">
+              <span className="tip-icon">📢</span>
+              <span>
+                Follow on{' '}
+                <a
+                  href="https://x.com/__Sithlord__"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="twitter-link"
+                >
+                  Twitter
+                </a>
+                {' '}for updates on donations!
+              </span>
             </div>
-            <div className="promo-tip coming-soon">
-              <span className="tip-icon">📖</span>
-              <span>To have an ad-free experience, you must <a href="https://sidshot.github.io/adblock-guide/" target="_blank" rel="noopener noreferrer" className="adblock-link">click here</a></span>
+            <div className="promo-tip social-tip telegram-tip">
+              <span className="tip-icon">💬</span>
+              <span>
+                Join our{' '}
+                <a
+                  href="https://t.me/cineamore"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="telegram-link"
+                >
+                  Telegram Group
+                </a>
+                {' '}for instant access to admin and swift updates!
+              </span>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="promo-actions">
-            <button onClick={handlePermanentDismiss} className="promo-btn-primary">
-              <span>I Have Read This</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            </button>
-            <button onClick={handleSessionDismiss} className="promo-btn-secondary">
-              I'll Read Later
-            </button>
+            {canDismiss ? (
+              <button onClick={handleDismiss} className="promo-btn-primary">
+                <span>Access CineAmore</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : (
+              <p className="countdown-text">
+                Please read... Access in {countdown} second{countdown !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -224,7 +255,7 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
         .promo-glow-1 {
           width: 200px;
           height: 200px;
-          background: #f59e0b; /* Amber warning color */
+          background: #fbbf24; /* Gold donation color */
           top: -80px;
           left: -60px;
         }
@@ -232,7 +263,7 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
         .promo-glow-2 {
           width: 180px;
           height: 180px;
-          background: #ef4444; /* Red accent */
+          background: #f472b6; /* Pink heart accent */
           bottom: -60px;
           right: -40px;
         }
@@ -263,12 +294,22 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
         .promo-subtitle {
           font-size: 0.95rem;
           color: rgba(255, 255, 255, 0.85);
-          margin: 0 0 24px 0;
+          margin: 0 0 16px 0;
           line-height: 1.7;
+        }
+
+        .promo-subtitle.donation-appeal {
+          margin-bottom: 24px;
         }
 
         .promo-subtitle strong {
           color: var(--fg);
+        }
+
+        .donate-highlight {
+          color: #fbbf24 !important;
+          font-size: 1.1em;
+          text-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
         }
 
         .promo-tips {
@@ -292,26 +333,61 @@ export default function PromoBanner({ showOnlyOnHome = true }) {
           line-height: 1.5;
         }
 
-        .adblock-link {
-          color: #f59e0b;
+        .twitter-link {
+          color: #1d9bf0;
           font-weight: 700;
-          text-decoration: underline;
-          text-underline-offset: 3px;
+          text-decoration: none;
+          background: rgba(29, 155, 240, 0.15);
+          padding: 2px 8px;
+          border-radius: 4px;
           transition: all 0.2s ease;
         }
 
-        .adblock-link:hover {
-          color: #fbbf24;
-          text-decoration-thickness: 2px;
+        .twitter-link:hover {
+          background: rgba(29, 155, 240, 0.3);
+          text-decoration: underline;
         }
 
-        .promo-tip.coming-soon {
-          background: rgba(245, 158, 11, 0.1);
-          border-color: rgba(245, 158, 11, 0.25);
+        .telegram-link {
+          color: #0088cc;
+          font-weight: 700;
+          text-decoration: none;
+          background: rgba(0, 136, 204, 0.15);
+          padding: 2px 8px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .telegram-link:hover {
+          background: rgba(0, 136, 204, 0.3);
+          text-decoration: underline;
+        }
+
+        .promo-tip.social-tip {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .promo-tip.telegram-tip {
+          background: rgba(0, 136, 204, 0.08);
+          border-color: rgba(0, 136, 204, 0.2);
         }
 
         .promo-tip strong {
           color: var(--fg);
+        }
+
+        .countdown-text {
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.95rem;
+          font-style: italic;
+          padding: 14px 0;
+          animation: countdownPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes countdownPulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
         }
 
         .tip-icon {
